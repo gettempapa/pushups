@@ -18,7 +18,6 @@ const logStatus = document.getElementById('log-status');
 const logClose = document.getElementById('log-close');
 const logExisting = document.getElementById('log-existing');
 const logExistingText = document.getElementById('log-existing-text');
-const mascot = document.querySelector('.pushup-guy');
 
 const animation = {
   start: null,
@@ -1537,57 +1536,6 @@ if (logName) {
     document.cookie = `pushup_name=${value}; Path=/; Max-Age=31536000; SameSite=Lax`;
   });
 }
-
-const updateMascotDock = () => {
-  if (!mascot || !logFab) return;
-  const docked = window.scrollY > 60;
-  if (docked) {
-    const rect = logFab.getBoundingClientRect();
-    const targetWidth = 150;
-    const left = Math.max(12, rect.right - targetWidth + 30);
-    const top = Math.max(12, rect.bottom - targetWidth + 90);
-    mascot.style.setProperty('--dock-left', `${left}px`);
-    mascot.style.setProperty('--dock-top', `${top}px`);
-    mascot.classList.add('docked');
-    mascot.classList.add('positioned');
-  } else {
-    mascot.classList.remove('docked');
-    const heading = document.querySelector('h1');
-    if (!heading) return;
-    const heroRect = heading.getBoundingClientRect();
-    const mascotRect = mascot.getBoundingClientRect();
-    if (!mascotRect.width || !mascotRect.height) return;
-    const handOffset = 0;
-    const left = Math.min(
-      Math.max(8, heroRect.left + heroRect.width / 2 - mascotRect.width / 2),
-      window.innerWidth - mascotRect.width - 8
-    );
-    const top = heroRect.top - mascotRect.height + handOffset;
-    mascot.style.setProperty('--hero-left', `${left}px`);
-    mascot.style.setProperty('--hero-top', `${top}px`);
-    mascot.classList.add('positioned');
-  }
-};
-
-const initMascot = () => {
-  if (!mascot) return;
-
-  const positionMascot = () => {
-    requestAnimationFrame(() => {
-      updateMascotDock();
-    });
-  };
-
-  if (mascot.complete) {
-    positionMascot();
-  } else {
-    mascot.addEventListener('load', positionMascot);
-  }
-};
-
-window.addEventListener('scroll', updateMascotDock, { passive: true });
-window.addEventListener('resize', updateMascotDock);
-window.addEventListener('DOMContentLoaded', initMascot);
 
 if (logForm) {
   logForm.addEventListener('submit', async event => {
