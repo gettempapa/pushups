@@ -1296,7 +1296,7 @@ const updateMascotDock = () => {
     const rect = logFab.getBoundingClientRect();
     const targetWidth = 140;
     const left = Math.max(12, rect.right - targetWidth);
-    const top = Math.max(12, rect.bottom - targetWidth);
+    const top = Math.max(12, rect.bottom - targetWidth + 60);
     mascot.style.setProperty('--dock-left', `${left}px`);
     mascot.style.setProperty('--dock-top', `${top}px`);
     mascot.classList.add('docked');
