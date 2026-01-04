@@ -114,7 +114,7 @@ body::before {
 }
 
 .latest-update {
-  margin-bottom: 20px;
+  margin-bottom: 50px;
   padding: 14px 20px;
   border-radius: var(--radius-md);
   background: var(--panel);
@@ -179,13 +179,14 @@ body::before {
 
 h1 {
   margin: 0 0 8px;
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-size: clamp(1.25rem, 3vw, 2rem);
   font-weight: 700;
   letter-spacing: -0.01em;
   background: linear-gradient(135deg, var(--text) 0%, var(--neon) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
 }
 
 .hero-sub {
@@ -345,9 +346,8 @@ h1 {
 
 .satis-summary-row {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  grid-template-rows: auto auto;
-  gap: 8px 16px;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 12px;
   align-items: center;
   padding: 14px 16px;
   border-radius: var(--radius-md);
@@ -361,12 +361,6 @@ h1 {
   border-color: rgba(148, 163, 184, 0.15);
 }
 
-.satis-summary-row .name-group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
 .satis-summary-row .name {
   font-size: 1rem;
   font-weight: 600;
@@ -378,28 +372,17 @@ h1 {
   color: var(--neon);
 }
 
-.satis-summary-row .days-label {
-  font-size: 0.6875rem;
-  color: var(--muted);
-  letter-spacing: 0.02em;
-}
-
-/* Mini calendar preview - spans full width below */
+/* Mini calendar dots */
 .mini-calendar {
-  grid-column: 1 / -1;
-  grid-row: 2;
   display: flex;
-  gap: 2px;
-  flex-wrap: nowrap;
-  width: 100%;
+  gap: 3px;
+  align-items: center;
 }
 
 .mini-cell {
-  flex: 1;
-  height: 4px;
-  border-radius: 1px;
-  background: var(--panel);
-  min-width: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
 .mini-cell.good {
@@ -408,10 +391,6 @@ h1 {
 
 .mini-cell.bad {
   background: var(--danger);
-}
-
-.mini-cell.empty {
-  background: rgba(148, 163, 184, 0.15);
 }
 
 .satis-summary-row .status-badge {
@@ -433,12 +412,18 @@ h1 {
   color: var(--danger);
 }
 
+/* Percent with label underneath */
+.satis-summary-row .percent-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 .satis-summary-row .percent {
   font-size: 1.125rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  min-width: 48px;
-  text-align: right;
 }
 
 .satis-summary-row .percent.good {
@@ -447,6 +432,13 @@ h1 {
 
 .satis-summary-row .percent.bad {
   color: var(--danger);
+}
+
+.satis-summary-row .percent-label {
+  font-size: 0.5625rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Expand button */
@@ -1096,7 +1088,7 @@ canvas {
 }
 
 .card.combined {
-  padding: 16px;
+  padding: 8px;
 }
 
 .card::before {
@@ -1235,7 +1227,7 @@ canvas {
 .chart-wrap {
   position: relative;
   border-radius: var(--radius-lg);
-  padding: 8px;
+  padding: 4px;
   background: linear-gradient(135deg, var(--bg-2), var(--bg));
   border: 1px solid var(--panel-border);
   width: 100%;
@@ -1542,7 +1534,7 @@ canvas {
 }
 
 .chart-tabs {
-  padding: 16px;
+  padding: 12px;
   border-radius: var(--radius-xl);
   background: var(--panel);
   border: 1px solid var(--panel-border);

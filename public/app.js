@@ -54,7 +54,7 @@ const palette = [
   '#e879f9'
 ];
 
-const chartPadding = { top: 24, right: 12, bottom: 48, left: 36 };
+const chartPadding = { top: 20, right: 8, bottom: 44, left: 32 };
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -845,13 +845,13 @@ const renderSatisBars = metricSeries => {
       return { name: series.name, good, bad, ratio, label, points: series.points };
     });
 
-  // Build mini calendar data (last 30 days)
+  // Build mini calendar data (last 20 days, no empty - only good/bad)
   const buildMiniCalendar = (points) => {
     const byDate = new Map(points.map(p => [p.date, p.value]));
-    const last30 = canonicalDates.slice(-30);
-    return last30.map(date => {
+    const last20 = canonicalDates.slice(-20);
+    return last20.map(date => {
       const value = byDate.get(date) ?? 0;
-      return { date, value, status: value >= goal ? 'good' : value > 0 ? 'bad' : 'empty' };
+      return { date, value, status: value >= goal ? 'good' : 'bad' };
     });
   };
 
@@ -867,33 +867,12 @@ const renderSatisBars = metricSeries => {
     summaryRow.className = 'satis-summary-row';
     summaryRow.dataset.personIndex = index;
 
-    // Name group with label
-    const nameGroup = document.createElement('div');
-    nameGroup.className = 'name-group';
+    // Name
     const nameEl = document.createElement('div');
     nameEl.className = 'name';
     nameEl.textContent = row.name;
-    const daysLabel = document.createElement('div');
-    daysLabel.className = 'days-label';
-    daysLabel.textContent = 'days w 100+ pushups';
-    nameGroup.appendChild(nameEl);
-    nameGroup.appendChild(daysLabel);
 
-    const statusBadge = document.createElement('div');
-    statusBadge.className = `status-badge ${row.ratio >= 50 ? 'good' : 'bad'}`;
-    statusBadge.textContent = row.label;
-
-    const percentEl = document.createElement('div');
-    percentEl.className = `percent ${row.ratio >= 50 ? 'good' : 'bad'}`;
-    percentEl.textContent = `${row.ratio}%`;
-
-    // Expand button with chevron SVG
-    const expandBtn = document.createElement('button');
-    expandBtn.type = 'button';
-    expandBtn.className = 'satis-expand-btn';
-    expandBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
-
-    // Mini calendar preview - spans full width below
+    // Mini calendar dots (last 20 days)
     const miniCal = document.createElement('div');
     miniCal.className = 'mini-calendar';
     const miniData = buildMiniCalendar(row.points);
@@ -903,11 +882,33 @@ const renderSatisBars = metricSeries => {
       miniCal.appendChild(cell);
     });
 
-    summaryRow.appendChild(nameGroup);
-    summaryRow.appendChild(statusBadge);
-    summaryRow.appendChild(percentEl);
-    summaryRow.appendChild(expandBtn);
+    const statusBadge = document.createElement('div');
+    statusBadge.className = `status-badge ${row.ratio >= 50 ? 'good' : 'bad'}`;
+    statusBadge.textContent = row.label;
+
+    // Percent group with label underneath
+    const percentGroup = document.createElement('div');
+    percentGroup.className = 'percent-group';
+    const percentEl = document.createElement('div');
+    percentEl.className = `percent ${row.ratio >= 50 ? 'good' : 'bad'}`;
+    percentEl.textContent = `${row.ratio}%`;
+    const percentLabel = document.createElement('div');
+    percentLabel.className = 'percent-label';
+    percentLabel.textContent = 'hit goal';
+    percentGroup.appendChild(percentEl);
+    percentGroup.appendChild(percentLabel);
+
+    // Expand button with chevron SVG
+    const expandBtn = document.createElement('button');
+    expandBtn.type = 'button';
+    expandBtn.className = 'satis-expand-btn';
+    expandBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+    summaryRow.appendChild(nameEl);
     summaryRow.appendChild(miniCal);
+    summaryRow.appendChild(statusBadge);
+    summaryRow.appendChild(percentGroup);
+    summaryRow.appendChild(expandBtn);
 
     // Click name to filter charts
     nameEl.addEventListener('click', (e) => {
