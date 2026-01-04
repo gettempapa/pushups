@@ -176,14 +176,14 @@ const statusLabelForValue = value => {
   if (value >= 101) return 'RELENTLESS';
   if (value >= 100) return 'SATISFACTORY';
   if (value >= 90) return 'LEGENDARY';
-  if (value >= 80) return 'HARDCORE';
-  if (value >= 70) return 'RUTHLESS';
-  if (value >= 60) return 'INTENSE';
-  if (value >= 50) return 'FIERCE';
-  if (value >= 40) return 'SCRAPPY';
-  if (value >= 30) return 'GRITTY';
-  if (value >= 20) return 'ROUGH';
-  if (value >= 10) return 'FEEBLE';
+  if (value >= 80) return 'UNDERCOOKED';
+  if (value >= 70) return 'DISAPPOINTING';
+  if (value >= 60) return 'WEAK-SAUCED';
+  if (value >= 50) return 'SLOPPY';
+  if (value >= 40) return 'LIMP';
+  if (value >= 30) return 'SAD';
+  if (value >= 20) return 'PATHETIC';
+  if (value >= 10) return 'WRETCHED';
   return 'PATHETIC';
 };
 
