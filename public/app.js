@@ -900,7 +900,7 @@ const renderSatisBars = metricSeries => {
     percentEl.textContent = `${row.ratio}%`;
     const percentLabel = document.createElement('div');
     percentLabel.className = 'percent-label';
-    percentLabel.textContent = '100+ hit rate';
+    percentLabel.textContent = 'Daily 100+ push-up success rate';
     percentGroup.appendChild(percentEl);
     percentGroup.appendChild(percentLabel);
 
