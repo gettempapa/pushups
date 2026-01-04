@@ -424,9 +424,10 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
   order.forEach(seriesIndex => {
     const series = seriesList[seriesIndex];
     const lineColor = palette[seriesIndex % palette.length];
+    const scale = isCoarsePointer() ? 0.8 : 1;
     const dimmed = hasSelection && !hoverSeries.has(seriesIndex);
     const highlighted = hasSelection && hoverSeries.has(seriesIndex);
-    ctx.lineWidth = highlighted ? 5 : dimmed ? 2 : 3.5;
+    ctx.lineWidth = (highlighted ? 4 : dimmed ? 1.6 : 3) * scale;
     ctx.shadowBlur = highlighted ? 20 : 14;
     ctx.shadowColor = highlighted ? lineColor : 'rgba(94, 234, 212, 0.35)';
     ctx.globalAlpha = dimmed ? 0.5 : 1;
@@ -455,13 +456,13 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
       if (index > maxIndex) return;
       const x = dateCount > 1 ? (drawWidth / totalSegments) * index : drawWidth / 2;
       const y = drawHeight - (point.close / maxValue) * drawHeight;
-      const radius = highlighted ? 8 : dimmed ? 5 : 7;
+      const radius = (highlighted ? 7 : dimmed ? 4 : 6) * scale;
       ctx.save();
       ctx.shadowBlur = dimmed ? 0 : 10;
       ctx.shadowColor = dimmed ? 'transparent' : lineColor;
       ctx.fillStyle = dimmed ? 'rgba(148, 163, 184, 0.9)' : lineColor;
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2 * scale;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
@@ -576,7 +577,8 @@ const animate = timestamp => {
   }
 };
 
-const inputHint = () => (window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'tap' : 'click');
+const isCoarsePointer = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+const inputHint = () => (isCoarsePointer() ? 'tap' : 'click');
 
 const renderMetricButtons = metrics => {
   metricToggle.innerHTML = '';
@@ -731,6 +733,9 @@ const renderSatisBars = metricSeries => {
 
     const calendars = document.createElement('div');
     calendars.className = 'satis-calendars';
+    const hint = document.createElement('div');
+    hint.className = 'satis-hint';
+    hint.textContent = `${inputHint()} for details`;
     let popup = null;
     const byDate = new Map(row.points.map(point => [point.date, point.value]));
     const startMonth = clampStart(satisMonthState.get(row.name) || defaultStart);
@@ -770,6 +775,7 @@ const renderSatisBars = metricSeries => {
     navButtons.appendChild(nextBtn);
     nav.appendChild(navLabel);
     nav.appendChild(navButtons);
+    calendars.appendChild(hint);
     calendars.appendChild(nav);
 
     const months = [];
