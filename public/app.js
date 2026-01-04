@@ -652,16 +652,16 @@ const renderSatisBars = metricSeries => {
 
   const earliestIso = canonicalDates[0];
   const todayIso = getPstIsoDate();
-  const minMonth = earliestIso ? monthStart(new Date(`${earliestIso}T00:00:00Z`)) : null;
   const maxMonth = monthStart(new Date(`${todayIso}T00:00:00Z`));
-  const lastPossibleStart = minMonth && maxMonth > minMonth ? addMonths(maxMonth, -1) : maxMonth;
+  const minMonth = addMonths(maxMonth, -5);
+  const lastPossibleStart = addMonths(maxMonth, -1);
   const clampStart = start => {
     let next = start;
     if (minMonth && next < minMonth) next = minMonth;
     if (lastPossibleStart && next > lastPossibleStart) next = lastPossibleStart;
     return next;
   };
-  const defaultStart = baseMonth ? addMonths(baseMonth, -1) : maxMonth;
+  const defaultStart = addMonths(maxMonth, -1);
   const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   const rows = metricSeries.map(series => {
