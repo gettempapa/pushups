@@ -203,7 +203,7 @@ h1 {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .hero-sub {
