@@ -1,0 +1,942 @@
+const board = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const metricToggle = document.getElementById('metric-toggle');
+const todayBars = document.getElementById('today-bars');
+const dayFilter = document.getElementById('day-filter');
+const satisBars = document.getElementById('satis-bars');
+const victoryRows = document.getElementById('victory-rows');
+const latestUpdate = document.getElementById('latest-update');
+const averageRows = document.getElementById('average-rows');
+const deadlineClock = document.getElementById('deadline-clock');
+
+const animation = {
+  start: null,
+  duration: 4200,
+  progress: 0,
+  running: false
+};
+
+let charts = [];
+let payloadCache = null;
+let currentMetric = 'pushups';
+let currentDay = null;
+let currentDayIndex = null;
+let isoIndexMap = new Map();
+let dailyCache = { metric: null, series: [], dates: [] };
+let canonicalDates = [];
+let baseMonth = null;
+
+const goal = 100;
+const palette = [
+  '#36f29e',
+  '#00a2ff',
+  '#ff2d55',
+  '#ffd166',
+  '#8c7bff',
+  '#ff8f5f',
+  '#2de2e6',
+  '#ff77a9',
+  '#b4ff5f',
+  '#f47bff'
+];
+
+const lerp = (a, b, t) => a + (b - a) * t;
+
+const parseDateString = value => {
+  if (!value) return null;
+  const str = String(value).trim();
+  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return new Date(Date.UTC(Number(y), Number(m) - 1, Number(d)));
+  }
+  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (slashMatch) {
+    const [, m, d, yRaw] = slashMatch;
+    const year = yRaw.length === 2 ? 2000 + Number(yRaw) : Number(yRaw);
+    return new Date(Date.UTC(year, Number(m) - 1, Number(d)));
+  }
+  const parsed = new Date(str);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const getPstParts = () => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(new Date());
+
+  const map = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    hour: Number(map.hour),
+    minute: Number(map.minute),
+    second: Number(map.second)
+  };
+};
+
+const updateDeadlineClock = () => {
+  if (!deadlineClock) return;
+  const { year, month, day, hour, minute, second } = getPstParts();
+  const nowUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  const endUtc = Date.UTC(year, month - 1, day + 1, 0, 0, 0);
+  const remaining = Math.max(0, endUtc - nowUtc);
+  const totalSeconds = Math.floor(remaining / 1000);
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+  deadlineClock.textContent = `${hours}:${minutes}:${seconds}`;
+};
+
+const getPstIsoDate = () => {
+  const { year, month, day } = getPstParts();
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
+const toISODate = date => date.toISOString().slice(0, 10);
+
+const colorForValue = value => {
+  const ratio = Math.min(Math.max(value / goal, 0), 1);
+  const start = [92, 78, 66];
+  const mid = [190, 80, 40];
+  const end = [255, 122, 0];
+  const midPoint = 0.6;
+  if (ratio < midPoint) {
+    const t = ratio / midPoint;
+    const r = Math.round(lerp(start[0], mid[0], t));
+    const g = Math.round(lerp(start[1], mid[1], t));
+    const b = Math.round(lerp(start[2], mid[2], t));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  const t = (ratio - midPoint) / (1 - midPoint);
+  const r = Math.round(lerp(mid[0], end[0], t));
+  const g = Math.round(lerp(mid[1], end[1], t));
+  const b = Math.round(lerp(mid[2], end[2], t));
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+const statusLabelForValue = value => {
+  if (value >= 160) return 'APOCALYPTIC';
+  if (value >= 140) return 'FERAL';
+  if (value >= 120) return 'NUCLEAR';
+  if (value >= 110) return 'SAVAGE';
+  if (value >= 101) return 'RELENTLESS';
+  if (value >= 100) return 'SATISFACTORY';
+  if (value >= 90) return 'NEARLY-THERE';
+  if (value >= 80) return 'STRONG';
+  if (value >= 70) return 'SOLID';
+  if (value >= 60) return 'STEADY';
+  if (value >= 50) return 'WARMING';
+  if (value >= 40) return 'DECENT';
+  if (value >= 30) return 'WEAK';
+  if (value >= 20) return 'POOR';
+  if (value >= 10) return 'SAD';
+  return 'PATHETIC';
+};
+
+const articleFor = word => {
+  if (!word) return 'a';
+  const lower = word.toLowerCase();
+  return ['a', 'e', 'i', 'o', 'u'].includes(lower[0]) ? 'an' : 'a';
+};
+
+const statusClassForValue = value => {
+  if (value >= 110) return 'status hot';
+  if (value >= 100) return 'status good';
+  if (value < 10) return 'status pathetic';
+  return 'status';
+};
+
+const formatDateLabel = iso => {
+  if (!iso || iso === 'Start') return '';
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!month || !day) return '';
+  return `${month}/${day}`;
+};
+
+const monthLabel = date =>
+  date.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
+const addMonths = (date, delta) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + delta, 1));
+
+const buildCanonicalDates = dates => {
+  const parsed = dates
+    .map(date => parseDateString(date))
+    .filter(Boolean)
+    .sort((a, b) => a - b);
+  if (!parsed.length) return [];
+
+  const start = new Date(Date.UTC(parsed[0].getUTCFullYear(), parsed[0].getUTCMonth(), parsed[0].getUTCDate()));
+  const end = new Date(Date.UTC(parsed[parsed.length - 1].getUTCFullYear(), parsed[parsed.length - 1].getUTCMonth(), parsed[parsed.length - 1].getUTCDate()));
+  const result = [];
+  let cursor = start;
+  while (cursor <= end) {
+    result.push(cursor.toISOString().slice(0, 10));
+    cursor = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), cursor.getUTCDate() + 1));
+  }
+  return result;
+};
+
+const buildCumulativeSeries = metricSeries =>
+  metricSeries.map(series => {
+    let total = 0;
+    const points = [
+      {
+        date: 'Start',
+        daily: 0,
+        open: 0,
+        close: 0
+      }
+    ];
+
+    series.points.forEach(point => {
+      const daily = Number(point.value) || 0;
+      const open = total;
+      total += daily;
+      points.push({
+        date: point.date,
+        daily,
+        open,
+        close: total
+      });
+    });
+
+    return { name: series.name, points };
+  });
+
+const buildCombinedCard = (metricSeries, metric) => {
+  const card = document.createElement('article');
+  card.className = 'card flash combined';
+
+  const header = document.createElement('div');
+  header.className = 'card-header';
+
+  const name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = `YTD CUMULATIVE · ${metric}`;
+
+  const badges = document.createElement('div');
+  badges.className = 'badges';
+
+  const note = document.createElement('span');
+  note.className = 'badge';
+  note.textContent = 'Cumulative YTD · hover for details';
+  badges.appendChild(note);
+
+  header.appendChild(name);
+  header.appendChild(badges);
+
+  const chartLayout = document.createElement('div');
+  chartLayout.className = 'chart-layout';
+
+  const legend = document.createElement('div');
+  legend.className = 'chart-legend';
+  metricSeries.forEach((series, index) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const swatch = document.createElement('span');
+    swatch.className = 'legend-swatch';
+    swatch.style.background = palette[index % palette.length];
+    const label = document.createElement('span');
+    label.textContent = series.name;
+    label.style.color = palette[index % palette.length];
+    const total = series.points[series.points.length - 1]?.close ?? 0;
+    const totalBadge = document.createElement('span');
+    totalBadge.className = 'legend-total';
+    totalBadge.textContent = total;
+    item.appendChild(swatch);
+    item.appendChild(label);
+    item.appendChild(totalBadge);
+    legend.appendChild(item);
+  });
+
+  const chartWrap = document.createElement('div');
+  chartWrap.className = 'chart-wrap';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1100;
+  canvas.height = 320;
+  chartWrap.appendChild(canvas);
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'calendar-popup';
+  chartWrap.appendChild(tooltip);
+
+  card.appendChild(header);
+  chartLayout.appendChild(legend);
+  chartLayout.appendChild(chartWrap);
+
+  card.appendChild(chartLayout);
+  board.appendChild(card);
+
+  return {
+    canvas,
+    tooltip,
+    series: metricSeries,
+    metric,
+    hover: null,
+    hoverSeries: null,
+    selectedSeries: new Set(),
+    legendItems: Array.from(legend.children)
+  };
+};
+
+const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, hoverSeries, width, height) => {
+  const padding = { top: 26, right: 40, bottom: 50, left: 60 };
+  if (!seriesList.length) return;
+
+  const dateCount = seriesList[0].points.length;
+  if (!dateCount) return;
+
+  const maxValue = Math.max(
+    ...seriesList.flatMap(series => series.points.map(point => point.close))
+  );
+
+  ctx.save();
+  ctx.translate(padding.left, padding.top);
+
+  ctx.strokeStyle = 'rgba(76, 255, 243, 0.12)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i += 1) {
+    const y = (height / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+
+  const totalSegments = Math.max(1, dateCount - 1);
+  const maxIndex = totalSegments * progress;
+
+  const hasSelection = hoverSeries !== null && hoverSeries.size > 0;
+  const order = hasSelection
+    ? seriesList.map((_, index) => index).filter(index => !hoverSeries.has(index)).concat([...hoverSeries])
+    : seriesList.map((_, index) => index);
+
+  order.forEach(seriesIndex => {
+    const series = seriesList[seriesIndex];
+    const lineColor = palette[seriesIndex % palette.length];
+    const dimmed = hasSelection && !hoverSeries.has(seriesIndex);
+    const highlighted = hasSelection && hoverSeries.has(seriesIndex);
+    ctx.lineWidth = highlighted ? 5 : dimmed ? 2 : 3.5;
+    ctx.shadowBlur = highlighted ? 20 : 14;
+    ctx.shadowColor = highlighted ? lineColor : 'rgba(94, 234, 212, 0.35)';
+    ctx.globalAlpha = dimmed ? 0.5 : 1;
+    ctx.strokeStyle = dimmed ? 'rgba(148, 163, 184, 0.9)' : lineColor;
+    for (let i = 0; i < dateCount - 1; i += 1) {
+      if (i > maxIndex) break;
+      const current = series.points[i + 1];
+      const previous = series.points[i];
+      const t = Math.min(1, maxIndex - i);
+
+      const x0 = dateCount > 1 ? (width / totalSegments) * i : width / 2;
+      const x1 = dateCount > 1 ? (width / totalSegments) * (i + t) : width / 2;
+      const y0 = height - (previous.close / maxValue) * height;
+      const y1 = height - (lerp(previous.close, current.close, t) / maxValue) * height;
+
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = dimmed ? 0.6 : 1;
+
+    series.points.forEach((point, index) => {
+      if (index > maxIndex) return;
+      const x = dateCount > 1 ? (width / totalSegments) * index : width / 2;
+      const y = height - (point.close / maxValue) * height;
+      const radius = highlighted ? 7 : dimmed ? 4 : 6;
+      ctx.save();
+      ctx.shadowBlur = dimmed ? 0 : 10;
+      ctx.shadowColor = dimmed ? 'transparent' : lineColor;
+      ctx.fillStyle = dimmed ? 'rgba(148, 163, 184, 0.9)' : lineColor;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1;
+  });
+
+  ctx.fillStyle = 'rgba(76, 255, 243, 0.6)';
+  ctx.font = '20px JetBrains Mono, ui-monospace, monospace';
+  ctx.fillText('0', 0, height + 20);
+  ctx.fillText(`${Math.round(maxValue)}`, 0, 12);
+
+  const labelCount = Math.min(dateCount, 6);
+  const step = Math.max(1, Math.floor((dateCount - 1) / (labelCount - 1 || 1)));
+  for (let i = 0; i < dateCount; i += step) {
+    const label = formatDateLabel(seriesList[0].points[i].date);
+    if (!label) continue;
+    const x = dateCount > 1 ? (width / totalSegments) * i : width / 2;
+    ctx.fillText(label, x - 8, height + 26);
+  }
+
+  if (hoverState) {
+    const { seriesIndex, pointIndex } = hoverState;
+    const series = seriesList[seriesIndex];
+    if (series) {
+      const point = series.points[pointIndex];
+      if (point) {
+        const x = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
+        const y = height - (point.close / maxValue) * height;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  ctx.restore();
+};
+
+const resizeCanvas = canvas => {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.floor(rect.width * dpr));
+  const height = Math.max(1, Math.floor(rect.height * dpr));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  return { rect, dpr };
+};
+
+const drawAll = progress => {
+  charts.forEach(chart => {
+    const ctx = chart.canvas.getContext('2d');
+    const { rect, dpr } = resizeCanvas(chart.canvas);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, chart.canvas.width, chart.canvas.height);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const effectiveProgress = chart.hover || chart.hoverSeries !== null ? 1 : progress;
+    drawCombinedChart(
+      ctx,
+      chart.series,
+      effectiveProgress,
+      chart.metric,
+      chart.hover,
+      chart.hoverSeries,
+      rect.width - 60 - 40,
+      rect.height - 26 - 50
+    );
+  });
+};
+
+const animate = timestamp => {
+  if (!animation.running) return;
+  if (!animation.start) animation.start = timestamp;
+  const elapsed = timestamp - animation.start;
+  animation.progress = Math.min(1, elapsed / animation.duration);
+  drawAll(animation.progress);
+
+  if (animation.progress < 1) {
+    requestAnimationFrame(animate);
+  } else {
+    animation.running = false;
+    statusEl.textContent = 'Live now';
+  }
+};
+
+const renderMetricButtons = metrics => {
+  metricToggle.innerHTML = '';
+  metrics.forEach(metric => {
+    const button = document.createElement('button');
+    button.className = 'metric-btn';
+    button.type = 'button';
+    button.textContent = metric;
+    if (metric === currentMetric) button.classList.add('active');
+    button.addEventListener('click', () => {
+      if (metric === currentMetric) return;
+      currentMetric = metric;
+      renderBoard(metric);
+      renderMetricButtons(metrics);
+    });
+    metricToggle.appendChild(button);
+  });
+};
+
+const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
+  todayBars.innerHTML = '';
+  if (!metricSeries.length) return;
+
+  const targetDay = selectedDay || dates[dates.length - 1];
+  const latestValues = metricSeries.map(series => {
+    const byDate = new Map(series.points.map(point => [point.date, point.value]));
+    return {
+      name: series.name,
+      value: byDate.get(targetDay) ?? 0
+    };
+  });
+
+  latestValues.sort((a, b) => b.value - a.value);
+
+  const maxValue = Math.max(goal, ...latestValues.map(item => item.value));
+  const scaleMax = Math.max(maxValue, goal * 1.2);
+  const winnerValue = Math.max(...latestValues.map(item => item.value));
+
+  latestValues.forEach(item => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'today-bar';
+
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = item.name;
+
+    const track = document.createElement('div');
+    track.className = 'bar-track';
+
+    const goalLine = document.createElement('div');
+    goalLine.className = 'goal-line';
+    const goalPercent = Math.min(100, (goal / scaleMax) * 100);
+    goalLine.style.left = `${goalPercent}%`;
+    const goalEmoji = document.createElement('div');
+    goalEmoji.className = 'goal-emoji';
+    goalEmoji.textContent = '💪';
+    goalEmoji.style.left = `${goalPercent}%`;
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const widthPercent = Math.min(100, Math.max(4, (item.value / scaleMax) * 100));
+    bar.style.width = `${widthPercent}%`;
+      bar.style.background = colorForValue(item.value);
+      if (item.value > goal) {
+        bar.classList.add('flame');
+        const intensity = Math.min(3, Math.max(1, (item.value - goal) / 30));
+        wrapper.style.setProperty('--shake', intensity.toFixed(2));
+        bar.style.setProperty('--over', Math.min(1, (item.value - goal) / 50).toFixed(2));
+      }
+
+    const value = document.createElement('div');
+    value.className = 'value';
+    value.textContent = item.value;
+
+    if (item.value > goal) {
+      wrapper.classList.add('flame');
+    }
+
+    if (item.value === winnerValue) {
+      const trophy = document.createElement('div');
+      trophy.className = 'trophy';
+      trophy.textContent = '🏆';
+      name.appendChild(trophy);
+    }
+
+    if (metric === 'pushups') {
+      const status = document.createElement('div');
+      status.className = statusClassForValue(item.value);
+      status.textContent = statusLabelForValue(item.value);
+      name.appendChild(status);
+    }
+
+    track.appendChild(goalLine);
+    track.appendChild(goalEmoji);
+    track.appendChild(bar);
+
+    wrapper.appendChild(name);
+    wrapper.appendChild(value);
+    wrapper.appendChild(track);
+    todayBars.appendChild(wrapper);
+  });
+};
+
+const renderSatisBars = metricSeries => {
+  satisBars.innerHTML = '';
+  if (!metricSeries.length) return;
+
+  const months = baseMonth ? [addMonths(baseMonth, -1), baseMonth] : [];
+  const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+  const rows = metricSeries.map(series => {
+    const good = series.points.filter(point => point.value >= goal).length;
+    const bad = series.points.filter(point => point.value <= 0).length;
+    const total = series.points.length;
+    const ratio = total ? Math.round((good / total) * 100) : 0;
+    const label = ratio >= 50 ? 'MOSTLY SATISFACTORY' : 'MOSTLY PATHETIC';
+    return { name: series.name, good, bad, ratio, label, points: series.points };
+  });
+
+  rows.forEach(row => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'satis-row';
+
+    const name = document.createElement('div');
+    name.className = 'satis-name';
+    const label = document.createElement('div');
+    label.textContent = row.name;
+    const indicator = document.createElement('div');
+    indicator.className = `satis-indicator ${row.ratio >= 50 ? 'good' : 'bad'}`;
+    const emoji = row.ratio >= 50 ? '👍' : '👎';
+    indicator.innerHTML = `<strong>${emoji} ${row.label}</strong> · ${row.ratio}%`;
+    name.appendChild(label);
+    name.appendChild(indicator);
+
+    const calendars = document.createElement('div');
+    calendars.className = 'satis-calendars';
+    let popup = null;
+    const byDate = new Map(row.points.map(point => [point.date, point.value]));
+    const earliest = canonicalDates[0];
+    const todayIso = getPstIsoDate();
+
+    months.forEach(monthDate => {
+      const month = document.createElement('div');
+      month.className = 'satis-month';
+
+      const title = document.createElement('div');
+      title.className = 'satis-month-title';
+      title.textContent = monthLabel(monthDate);
+
+      const weekdayRow = document.createElement('div');
+      weekdayRow.className = 'satis-weekdays';
+      weekdays.forEach(day => {
+        const label = document.createElement('span');
+        label.textContent = day;
+        weekdayRow.appendChild(label);
+      });
+
+      const grid = document.createElement('div');
+      grid.className = 'satis-grid';
+
+      const firstDay = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth(), 1));
+      const startOffset = firstDay.getUTCDay();
+      const daysInMonth = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + 1, 0)).getUTCDate();
+
+      for (let i = 0; i < startOffset; i += 1) {
+        const empty = document.createElement('div');
+        empty.className = 'satis-cell empty';
+        grid.appendChild(empty);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const iso = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth(), day)).toISOString().slice(0, 10);
+        const value = byDate.get(iso) ?? 0;
+        const cell = document.createElement('div');
+        cell.className = 'satis-cell';
+        if ((earliest && iso < earliest) || iso > todayIso) {
+          cell.classList.add('empty');
+        } else {
+          if (value >= goal) cell.classList.add('good');
+          if (value < goal) cell.classList.add('bad');
+          cell.dataset.count = value;
+        cell.addEventListener('click', () => {
+          document.querySelectorAll('.satis-cell.selected').forEach(existing => {
+            existing.classList.remove('selected');
+          });
+          document.querySelectorAll('.calendar-popup').forEach(existing => {
+            existing.remove();
+          });
+          cell.classList.add('selected');
+          const label = statusLabelForValue(value).toLowerCase();
+          popup = document.createElement('div');
+          popup.className = `calendar-popup ${value >= goal ? 'good' : 'bad'}`;
+          popup.textContent = `${row.name} performed ${articleFor(label)} ${label} ${value} pushups`;
+          const rect = cell.getBoundingClientRect();
+          const parentRect = calendars.getBoundingClientRect();
+          popup.style.left = `${rect.left - parentRect.left}px`;
+          popup.style.top = `${rect.bottom - parentRect.top + 8}px`;
+          calendars.appendChild(popup);
+        });
+        }
+        cell.textContent = day;
+        grid.appendChild(cell);
+      }
+
+      month.appendChild(title);
+      month.appendChild(weekdayRow);
+      month.appendChild(grid);
+      calendars.appendChild(month);
+    });
+
+    wrapper.appendChild(name);
+    wrapper.appendChild(calendars);
+    satisBars.appendChild(wrapper);
+  });
+};
+
+const renderVictories = (metricSeries, dates) => {
+  victoryRows.innerHTML = '';
+  if (!metricSeries.length || !dates.length) return;
+
+  const wins = new Map(metricSeries.map(series => [series.name, 0]));
+
+  dates.forEach(date => {
+    let max = -Infinity;
+    const daily = metricSeries.map(series => {
+      const point = series.points.find(p => p.date === date);
+      const value = point ? point.value : 0;
+      if (value > max) max = value;
+      return { name: series.name, value };
+    });
+
+    if (max <= 0) return;
+    daily.forEach(item => {
+      if (item.value === max) {
+        wins.set(item.name, (wins.get(item.name) || 0) + 1);
+      }
+    });
+  });
+
+  const rows = Array.from(wins.entries()).sort((a, b) => b[1] - a[1]);
+  rows.forEach(([name, count], index) => {
+    const row = document.createElement('div');
+    row.className = 'victory-row';
+    const who = document.createElement('span');
+    const emoji = count === 0 ? '💩' : index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔥';
+    who.textContent = `${emoji} ${name}`;
+    const total = document.createElement('span');
+    total.textContent = count;
+    row.appendChild(who);
+    row.appendChild(total);
+    victoryRows.appendChild(row);
+  });
+};
+
+const renderAverages = metricSeries => {
+  if (!averageRows) return;
+  averageRows.innerHTML = '';
+  if (!metricSeries.length) return;
+
+  metricSeries.forEach(series => {
+    const last30 = series.points.slice(-30);
+    const total = last30.reduce((sum, point) => sum + (Number(point.value) || 0), 0);
+    const avg = last30.length ? Math.round(total / last30.length) : 0;
+
+    const row = document.createElement('div');
+    row.className = 'victory-row';
+    const who = document.createElement('span');
+    who.textContent = series.name;
+    const value = document.createElement('span');
+    value.textContent = `${avg} pushups`;
+    row.appendChild(who);
+    row.appendChild(value);
+    averageRows.appendChild(row);
+  });
+};
+
+const renderLatestUpdate = (metricSeries, dates) => {
+  if (!latestUpdate) return;
+  if (!metricSeries.length || !dates.length) {
+    latestUpdate.textContent = 'No updates yet.';
+    return;
+  }
+
+  const latestDate = dates[dates.length - 1];
+  let topName = null;
+  let topValue = -Infinity;
+
+  metricSeries.forEach(series => {
+    const point = series.points.find(p => p.date === latestDate);
+    const value = point ? point.value : 0;
+    if (value > topValue) {
+      topValue = value;
+      topName = series.name;
+    }
+  });
+
+  if (topValue <= 0 || !topName) {
+    latestUpdate.textContent = `Most recent update (${latestDate}): no pushups logged.`;
+    return;
+  }
+
+  latestUpdate.innerHTML = `<span class="bang">❗</span>Most recent update (${latestDate}): <strong>${topName}</strong> just logged <strong>${topValue}</strong> pushups.`;
+};
+const setupDateFilter = dates => {
+  isoIndexMap = new Map();
+
+  const parsedDates = dates
+    .map(date => {
+      const parsed = parseDateString(date);
+      return parsed ? { date, parsed } : null;
+    })
+    .filter(Boolean);
+
+  if (!parsedDates.length) return;
+
+  canonicalDates = buildCanonicalDates(dates);
+  canonicalDates.forEach((iso, index) => {
+    isoIndexMap.set(iso, index);
+  });
+
+  const firstParsed = parsedDates[0].parsed;
+  const lastParsed = parsedDates[parsedDates.length - 1].parsed;
+  baseMonth = new Date(Date.UTC(lastParsed.getUTCFullYear(), lastParsed.getUTCMonth(), 1));
+
+  dayFilter.min = canonicalDates[0];
+  dayFilter.max = canonicalDates[canonicalDates.length - 1];
+  dayFilter.value = dayFilter.value || canonicalDates[canonicalDates.length - 1];
+  const initialIndex = isoIndexMap.get(dayFilter.value);
+  currentDayIndex = initialIndex ?? (canonicalDates.length - 1);
+  currentDay = canonicalDates[currentDayIndex] || canonicalDates[canonicalDates.length - 1];
+};
+
+const normalizeSeries = (metricSeries, dates) =>
+  metricSeries.map(series => {
+    const byDate = new Map(
+      series.points
+        .map(point => {
+          const parsed = parseDateString(point.date);
+          if (!parsed) return null;
+          return [toISODate(parsed), point.value];
+        })
+        .filter(Boolean)
+    );
+    const points = dates.map(date => ({
+      date,
+      value: byDate.get(date) ?? 0
+    }));
+    return { name: series.name, points };
+  });
+
+const renderBoard = metric => {
+  if (!payloadCache) return;
+  board.innerHTML = '';
+  const metricSeries = payloadCache.seriesByMetric?.[metric] || payloadCache.series || [];
+  const dates = canonicalDates.length ? canonicalDates : payloadCache.dates || [];
+  const normalizedSeries = dates.length ? normalizeSeries(metricSeries, dates) : metricSeries;
+  dailyCache = { metric, series: normalizedSeries, dates };
+  renderTodayBars(normalizedSeries, metric, currentDay || dates[dates.length - 1], dates);
+  const cumulativeSeries = buildCumulativeSeries(normalizedSeries);
+  const chart = buildCombinedCard(cumulativeSeries, metric);
+  charts = [chart];
+  renderSatisBars(normalizedSeries);
+  renderVictories(normalizedSeries, dates);
+  renderAverages(normalizedSeries);
+  renderLatestUpdate(normalizedSeries, dates);
+  renderSatisBars(normalizedSeries);
+  renderVictories(normalizedSeries, dates);
+
+  chart.legendItems.forEach((item, index) => {
+    item.addEventListener('click', () => {
+      if (chart.selectedSeries.has(index)) {
+        chart.selectedSeries.delete(index);
+      } else {
+        chart.selectedSeries.add(index);
+      }
+      chart.hoverSeries = chart.selectedSeries.size ? chart.selectedSeries : null;
+      chart.legendItems.forEach((el, itemIndex) => {
+        el.classList.toggle('active', chart.selectedSeries.has(itemIndex));
+      });
+      drawAll(animation.progress);
+    });
+  });
+
+  const handleHover = event => {
+    const rect = chart.canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const padding = { top: 26, right: 40, bottom: 50, left: 60 };
+    const width = rect.width - padding.left - padding.right;
+    const height = rect.height - padding.top - padding.bottom;
+    if (x < padding.left || x > padding.left + width || y < padding.top || y > padding.top + height) {
+      chart.hover = null;
+      if (chart.tooltip.parentElement) chart.tooltip.remove();
+      drawAll(animation.progress);
+      return;
+    }
+
+    const dateCount = chart.series[0]?.points.length || 0;
+    if (!dateCount) return;
+    const totalSegments = Math.max(1, dateCount - 1);
+    const maxValue = Math.max(
+      ...chart.series.flatMap(series => series.points.map(point => point.close))
+    );
+
+    const hoverX = x - padding.left;
+    const hoverY = y - padding.top;
+    let closest = null;
+    let closestDistance = Infinity;
+
+    chart.series.forEach((series, seriesIndex) => {
+      series.points.forEach((point, pointIndex) => {
+        const px = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
+        const py = height - (point.close / maxValue) * height;
+        const dx = px - hoverX;
+        const dy = py - hoverY;
+        const distance = Math.hypot(dx, dy);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closest = { seriesIndex, pointIndex, px, py };
+        }
+      });
+    });
+
+    if (!closest || closestDistance > 12) {
+      chart.hover = null;
+      if (chart.tooltip.parentElement) chart.tooltip.remove();
+      drawAll(animation.progress);
+      return;
+    }
+
+    chart.hover = { seriesIndex: closest.seriesIndex, pointIndex: closest.pointIndex };
+    const point = chart.series[closest.seriesIndex].points[closest.pointIndex];
+    const adjective = statusLabelForValue(point.daily).toLowerCase();
+    chart.tooltip.textContent = `${chart.series[closest.seriesIndex].name} performed ${articleFor(adjective)} ${adjective} ${point.daily} pushups`;
+    chart.tooltip.className = `calendar-popup ${point.daily >= goal ? 'good' : 'bad'}`;
+    chart.tooltip.style.left = `${padding.left + closest.px + 12}px`;
+    chart.tooltip.style.top = `${padding.top + closest.py - 12}px`;
+    chart.canvas.parentElement?.appendChild(chart.tooltip);
+    drawAll(animation.progress);
+  };
+
+  chart.canvas.addEventListener('mousemove', handleHover);
+  chart.canvas.addEventListener('mouseleave', () => {
+    chart.hover = null;
+    if (chart.tooltip.parentElement) chart.tooltip.remove();
+    drawAll(animation.progress);
+  });
+  animation.start = null;
+  animation.progress = 0;
+  animation.running = true;
+  requestAnimationFrame(animate);
+};
+
+const loadData = async () => {
+  statusEl.textContent = 'Syncing...';
+  const res = await fetch('/api/data');
+  if (!res.ok) {
+    statusEl.textContent = 'Sync failed';
+    return;
+  }
+  const payload = await res.json();
+  payloadCache = payload;
+  const metrics = payload.metrics?.length ? payload.metrics : ['pushups'];
+  if (!metrics.includes(currentMetric)) currentMetric = metrics[0];
+  if (payload.dates?.length) {
+    setupDateFilter(payload.dates);
+  }
+  renderMetricButtons(metrics);
+  renderBoard(currentMetric);
+};
+
+dayFilter.addEventListener('change', event => {
+  if (!isoIndexMap.size) return;
+  const iso = event.target.value;
+  const nextIndex = isoIndexMap.get(iso);
+  currentDayIndex = nextIndex ?? null;
+  currentDay = currentDayIndex === null ? iso : dailyCache.dates[currentDayIndex];
+  if (dailyCache.series.length) {
+    renderTodayBars(dailyCache.series, currentMetric, currentDay, dailyCache.dates);
+  }
+});
+
+
+loadData().catch(() => {
+  statusEl.textContent = 'Sync failed';
+});
+
+updateDeadlineClock();
+setInterval(updateDeadlineClock, 1000);
