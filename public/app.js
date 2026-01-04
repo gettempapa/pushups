@@ -51,6 +51,8 @@ const palette = [
   '#f47bff'
 ];
 
+const chartPadding = { top: 32, right: 28, bottom: 72, left: 84 };
+
 const lerp = (a, b, t) => a + (b - a) * t;
 
 const parseDateString = value => {
@@ -351,7 +353,7 @@ const buildCombinedCard = (metricSeries, metric, options = {}) => {
 };
 
 const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, hoverSeries, width, height, yTicks, yMaxOverride) => {
-  const padding = { top: 28, right: 24, bottom: 64, left: 72 };
+  const padding = chartPadding;
   if (!seriesList.length) return;
 
   const dateCount = seriesList[0].points.length;
@@ -362,6 +364,9 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
   );
   const maxValue = Math.max(yMaxOverride || 0, computedMax || 0, 1);
 
+  const drawWidth = width - padding.left - padding.right;
+  const drawHeight = height - padding.top - padding.bottom;
+
   ctx.save();
   ctx.translate(padding.left, padding.top);
 
@@ -369,18 +374,18 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
   ctx.lineWidth = 1;
   if (Array.isArray(yTicks) && yTicks.length) {
     yTicks.forEach(tick => {
-      const y = height - (tick / maxValue) * height;
+      const y = drawHeight - (tick / maxValue) * drawHeight;
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
+      ctx.lineTo(drawWidth, y);
       ctx.stroke();
     });
   } else {
     for (let i = 0; i <= 4; i += 1) {
-      const y = (height / 4) * i;
+      const y = (drawHeight / 4) * i;
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
+      ctx.lineTo(drawWidth, y);
       ctx.stroke();
     }
   }
@@ -409,10 +414,10 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
       const previous = series.points[i];
       const t = Math.min(1, maxIndex - i);
 
-      const x0 = dateCount > 1 ? (width / totalSegments) * i : width / 2;
-      const x1 = dateCount > 1 ? (width / totalSegments) * (i + t) : width / 2;
-      const y0 = height - (previous.close / maxValue) * height;
-      const y1 = height - (lerp(previous.close, current.close, t) / maxValue) * height;
+      const x0 = dateCount > 1 ? (drawWidth / totalSegments) * i : drawWidth / 2;
+      const x1 = dateCount > 1 ? (drawWidth / totalSegments) * (i + t) : drawWidth / 2;
+      const y0 = drawHeight - (previous.close / maxValue) * drawHeight;
+      const y1 = drawHeight - (lerp(previous.close, current.close, t) / maxValue) * drawHeight;
 
       ctx.beginPath();
       ctx.moveTo(x0, y0);
@@ -424,8 +429,8 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
 
     series.points.forEach((point, index) => {
       if (index > maxIndex) return;
-      const x = dateCount > 1 ? (width / totalSegments) * index : width / 2;
-      const y = height - (point.close / maxValue) * height;
+      const x = dateCount > 1 ? (drawWidth / totalSegments) * index : drawWidth / 2;
+      const y = drawHeight - (point.close / maxValue) * drawHeight;
       const radius = highlighted ? 8 : dimmed ? 5 : 7;
       ctx.save();
       ctx.shadowBlur = dimmed ? 0 : 10;
@@ -444,11 +449,11 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
 
   ctx.fillStyle = 'rgba(76, 255, 243, 0.7)';
   ctx.font = '18px JetBrains Mono, ui-monospace, monospace';
-  ctx.fillText('0', 0, height + 28);
+  ctx.fillText('0', 0, drawHeight + 28);
   ctx.fillText(`${Math.round(maxValue)}`, 0, 16);
   if (Array.isArray(yTicks) && yTicks.length) {
     yTicks.forEach(tick => {
-      const y = height - (tick / maxValue) * height;
+      const y = drawHeight - (tick / maxValue) * drawHeight;
       ctx.fillText(`${tick}`, 0, y + 6);
     });
   }
@@ -457,16 +462,16 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
   for (let i = 0; i < dateCount; i += 1) {
     const label = formatDateLabel(seriesList[0].points[i].date);
     if (!label) continue;
-    const x = dateCount > 1 ? (width / totalSegments) * i : width / 2;
+    const x = dateCount > 1 ? (drawWidth / totalSegments) * i : drawWidth / 2;
     const isEdge = i === 0 || i === dateCount - 1;
     const labelWidth = ctx.measureText(label).width;
     let labelX = x - labelWidth / 2;
     if (labelX < 0) labelX = 0;
-    if (labelX + labelWidth > width) labelX = width - labelWidth;
+    if (labelX + labelWidth > drawWidth) labelX = drawWidth - labelWidth;
     const left = labelX;
     const right = labelX + labelWidth;
     if (!isEdge && left <= lastLabelRight + 16) continue;
-    ctx.fillText(label, labelX, height + 34);
+    ctx.fillText(label, labelX, drawHeight + 34);
     lastLabelRight = right;
   }
 
@@ -476,8 +481,8 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     if (series) {
       const point = series.points[pointIndex];
       if (point) {
-        const x = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
-        const y = height - (point.close / maxValue) * height;
+        const x = dateCount > 1 ? (drawWidth / totalSegments) * pointIndex : drawWidth / 2;
+        const y = drawHeight - (point.close / maxValue) * drawHeight;
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(x, y, 5, 0, Math.PI * 2);
@@ -516,8 +521,8 @@ const drawAll = progress => {
       chart.metric,
       chart.hover,
       chart.hoverSeries,
-      rect.width - 60 - 40,
-      rect.height - 26 - 50,
+      rect.width,
+      rect.height,
       chart.yTicks,
       chart.yMax
     );
@@ -999,7 +1004,7 @@ const renderBoard = metric => {
       const rect = chart.canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      const padding = { top: 28, right: 24, bottom: 64, left: 72 };
+      const padding = chartPadding;
       const width = rect.width - padding.left - padding.right;
       const height = rect.height - padding.top - padding.bottom;
       if (x < padding.left || x > padding.left + width || y < padding.top || y > padding.top + height) {
