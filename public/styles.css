@@ -67,9 +67,9 @@ body::before {
 }
 
 .page {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 32px 24px 80px;
+  padding: 32px 40px 80px;
 }
 
 .warning-banner {
@@ -126,7 +126,7 @@ body::before {
 }
 
 .hero {
-  margin-top: 170px;
+  margin-top: 190px;
 }
 
 .latest-update strong {
@@ -332,6 +332,101 @@ h1 {
 .satis-bars {
   display: grid;
   gap: 12px;
+}
+
+.satis-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.satis-toggle-btn {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-2);
+  color: var(--text-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.satis-toggle-btn:hover {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+.satis-summary-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-2);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.satis-summary-row:hover {
+  background: rgba(148, 163, 184, 0.08);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.satis-summary-row .name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.satis-summary-row .status-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.satis-summary-row .status-badge.good {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success);
+}
+
+.satis-summary-row .status-badge.bad {
+  background: rgba(244, 114, 182, 0.15);
+  color: var(--danger);
+}
+
+.satis-summary-row .percent {
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+
+.satis-summary-row .percent.good {
+  color: var(--success);
+}
+
+.satis-summary-row .percent.bad {
+  color: var(--danger);
+}
+
+.satis-details {
+  display: none;
+  margin-top: 16px;
+}
+
+.satis-details.visible {
+  display: block;
 }
 
 .satis-row {
@@ -650,11 +745,11 @@ h1 {
 
 .today-bar {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) auto 1fr auto;
   align-items: center;
-  gap: 16px;
-  justify-content: flex-start;
-  padding: 14px 18px;
+  gap: 20px;
+  padding: 16px 24px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--panel-border);
   background: var(--panel-2);
@@ -756,40 +851,38 @@ h1 {
   animation: flameTextPulse 0.4s ease-in-out infinite;
 }
 
-.today-bar .value {
-  min-width: 48px;
-  text-align: right;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
 .today-bar .name {
-  min-width: 100px;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--text);
-  text-align: left;
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .today-bar .trophy {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 .today-bar .status {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 3px 8px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: var(--panel);
   color: var(--muted);
+  white-space: nowrap;
+}
+
+.today-bar .value {
+  min-width: 60px;
+  text-align: right;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 canvas {
@@ -1485,23 +1578,33 @@ canvas {
   }
 
   .today-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto auto;
+    gap: 8px 12px;
     padding: 12px 14px;
   }
 
   .today-bar .name {
+    grid-column: 1;
+    grid-row: 1;
     min-width: 0;
-    justify-content: space-between;
-    width: 100%;
+  }
+
+  .today-bar .status {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .today-bar .bar-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: 8px;
   }
 
   .today-bar .value {
-    min-width: 0;
-    position: absolute;
-    top: 12px;
-    right: 14px;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    text-align: left;
     font-size: 1rem;
   }
 

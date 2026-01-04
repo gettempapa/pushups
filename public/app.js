@@ -787,11 +787,11 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
       name.appendChild(trophy);
     }
 
+    let statusEl = null;
     if (metric === 'pushups') {
-      const status = document.createElement('div');
-      status.className = statusClassForValue(item.value);
-      status.textContent = statusLabelForValue(item.value);
-      name.appendChild(status);
+      statusEl = document.createElement('div');
+      statusEl.className = statusClassForValue(item.value);
+      statusEl.textContent = statusLabelForValue(item.value);
     }
 
     track.appendChild(goalLine);
@@ -799,11 +799,14 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     track.appendChild(bar);
 
     wrapper.appendChild(name);
-    wrapper.appendChild(value);
+    if (statusEl) wrapper.appendChild(statusEl);
     wrapper.appendChild(track);
+    wrapper.appendChild(value);
     todayBars.appendChild(wrapper);
   });
 };
+
+let satisDetailsVisible = false;
 
 const renderSatisBars = metricSeries => {
   satisBars.innerHTML = '';
@@ -830,9 +833,82 @@ const renderSatisBars = metricSeries => {
       const bad = series.points.filter(point => point.value <= 0).length;
       const total = series.points.length;
       const ratio = total ? Math.round((good / total) * 100) : 0;
-      const label = ratio >= 50 ? 'MOSTLY SATISFACTORY' : 'MOSTLY PATHETIC';
+      const label = ratio >= 50 ? 'SATISFACTORY' : 'PATHETIC';
       return { name: series.name, good, bad, ratio, label, points: series.points };
     });
+
+  // Summary view
+  const summarySection = document.createElement('div');
+  summarySection.className = 'satis-summary';
+
+  rows.forEach((row, index) => {
+    const summaryRow = document.createElement('div');
+    summaryRow.className = 'satis-summary-row';
+    summaryRow.dataset.personIndex = index;
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'name';
+    nameEl.textContent = row.name;
+
+    const statusBadge = document.createElement('div');
+    statusBadge.className = `status-badge ${row.ratio >= 50 ? 'good' : 'bad'}`;
+    statusBadge.textContent = row.label;
+
+    const percentEl = document.createElement('div');
+    percentEl.className = `percent ${row.ratio >= 50 ? 'good' : 'bad'}`;
+    percentEl.textContent = `${row.ratio}%`;
+
+    summaryRow.appendChild(nameEl);
+    summaryRow.appendChild(statusBadge);
+    summaryRow.appendChild(percentEl);
+
+    // Click to filter charts to this person
+    summaryRow.addEventListener('click', () => {
+      const personName = row.name;
+      charts.forEach(chart => {
+        const seriesIndex = chart.series.findIndex(s => s.name === personName);
+        if (seriesIndex !== -1) {
+          if (chart.selectedSeries.has(seriesIndex) && chart.selectedSeries.size === 1) {
+            chart.selectedSeries.clear();
+          } else {
+            chart.selectedSeries.clear();
+            chart.selectedSeries.add(seriesIndex);
+          }
+          chart.hoverSeries = chart.selectedSeries.size ? chart.selectedSeries : null;
+          chart.legendItems.forEach((el, itemIndex) => {
+            el.classList.toggle('active', chart.selectedSeries.has(itemIndex));
+          });
+        }
+      });
+      drawAll(animation.progress);
+      // Scroll to charts
+      const chartsSection = document.querySelector('.chart-tabs');
+      if (chartsSection) {
+        chartsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    summarySection.appendChild(summaryRow);
+  });
+
+  satisBars.appendChild(summarySection);
+
+  // Toggle button and details section
+  const toggleBtn = document.createElement('button');
+  toggleBtn.type = 'button';
+  toggleBtn.className = 'satis-toggle-btn';
+  toggleBtn.textContent = satisDetailsVisible ? 'Hide Calendar Details' : 'Show Calendar Details';
+  toggleBtn.style.marginTop = '16px';
+  satisBars.appendChild(toggleBtn);
+
+  const detailsSection = document.createElement('div');
+  detailsSection.className = `satis-details ${satisDetailsVisible ? 'visible' : ''}`;
+
+  toggleBtn.addEventListener('click', () => {
+    satisDetailsVisible = !satisDetailsVisible;
+    detailsSection.classList.toggle('visible', satisDetailsVisible);
+    toggleBtn.textContent = satisDetailsVisible ? 'Hide Calendar Details' : 'Show Calendar Details';
+  });
 
   rows.forEach(row => {
     const wrapper = document.createElement('div');
@@ -972,8 +1048,10 @@ const renderSatisBars = metricSeries => {
 
     wrapper.appendChild(name);
     wrapper.appendChild(calendars);
-    satisBars.appendChild(wrapper);
+    detailsSection.appendChild(wrapper);
   });
+
+  satisBars.appendChild(detailsSection);
 };
 
 const renderVictories = (metricSeries, dates) => {
