@@ -1433,6 +1433,7 @@ const updateMascotDock = () => {
     mascot.style.setProperty('--dock-left', `${left}px`);
     mascot.style.setProperty('--dock-top', `${top}px`);
     mascot.classList.add('docked');
+    mascot.classList.add('positioned');
   } else {
     mascot.classList.remove('docked');
     const heading = document.querySelector('h1');
@@ -1448,11 +1449,29 @@ const updateMascotDock = () => {
     const top = heroRect.top - mascotRect.height + handOffset;
     mascot.style.setProperty('--hero-left', `${left}px`);
     mascot.style.setProperty('--hero-top', `${top}px`);
+    mascot.classList.add('positioned');
+  }
+};
+
+const initMascot = () => {
+  if (!mascot) return;
+
+  const positionMascot = () => {
+    requestAnimationFrame(() => {
+      updateMascotDock();
+    });
+  };
+
+  if (mascot.complete) {
+    positionMascot();
+  } else {
+    mascot.addEventListener('load', positionMascot);
   }
 };
 
 window.addEventListener('scroll', updateMascotDock, { passive: true });
 window.addEventListener('resize', updateMascotDock);
+window.addEventListener('DOMContentLoaded', initMascot);
 
 if (logForm) {
   logForm.addEventListener('submit', async event => {
@@ -1539,4 +1558,4 @@ loadData().catch(() => {
 
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
-updateMascotDock();
+initMascot();
