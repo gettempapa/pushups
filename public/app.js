@@ -565,22 +565,21 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
 
   // Draw axis labels
   ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
-  ctx.font = '12px JetBrains Mono, ui-monospace, monospace';
-  const usedY = [];
-  const maxLabelY = 4;
-  const minLabelY = drawHeight + 20;
-  ctx.fillText(`${Math.round(maxValue)}`, 0, maxLabelY);
-  usedY.push(maxLabelY);
-  ctx.fillText('0', 0, minLabelY);
-  usedY.push(minLabelY);
-  if (Array.isArray(yTicks) && yTicks.length) {
-    yTicks.forEach(tick => {
+  ctx.font = '11px JetBrains Mono, ui-monospace, monospace';
+
+  // Always draw 25, 50, 75, 100 tick marks for daily/rolling charts
+  const defaultTicks = [25, 50, 75, 100];
+  const ticksToUse = Array.isArray(yTicks) && yTicks.length ? yTicks : defaultTicks;
+
+  ticksToUse.forEach(tick => {
+    if (tick <= maxValue) {
       const y = drawHeight - (tick / maxValue) * drawHeight + 4;
-      if (usedY.some(existing => Math.abs(existing - y) < 16)) return;
       ctx.fillText(`${tick}`, 0, y);
-      usedY.push(y);
-    });
-  }
+    }
+  });
+
+  // Draw 0 at bottom
+  ctx.fillText('0', 0, drawHeight + 16);
 
   let lastLabelRight = -Infinity;
   ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
@@ -894,7 +893,7 @@ const renderSatisBars = metricSeries => {
     percentEl.textContent = `${row.ratio}%`;
     const percentLabel = document.createElement('div');
     percentLabel.className = 'percent-label';
-    percentLabel.textContent = 'hit goal';
+    percentLabel.textContent = '100 min. daily';
     percentGroup.appendChild(percentEl);
     percentGroup.appendChild(percentLabel);
 
