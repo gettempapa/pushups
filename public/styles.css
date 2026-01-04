@@ -842,9 +842,10 @@ h1 {
 .today-bar {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(100px, 150px) auto 1fr auto;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 12px;
   width: 100%;
   border-radius: var(--radius-md);
@@ -1075,12 +1076,55 @@ h1 {
 }
 
 .today-bar .value {
-  min-width: 60px;
-  text-align: right;
-  font-size: 1.25rem;
-  font-weight: 700;
+  min-width: 0;
+  text-align: left;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+.today-bar .value .count {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.today-bar .value .unit {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.today-bar .value .adjective {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--panel-border);
+}
+
+.today-bar .value .adjective.good {
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.12);
+}
+
+.today-bar .value .adjective.hot {
+  color: var(--warn);
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.today-bar .value .adjective.pathetic {
+  color: var(--danger);
+  border-color: rgba(244, 114, 182, 0.35);
+  background: rgba(244, 114, 182, 0.12);
 }
 
 canvas {
@@ -1797,34 +1841,12 @@ canvas {
   }
 
   .today-bar {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto auto;
     gap: 8px 12px;
     padding: 12px 14px;
   }
 
-  .today-bar .name {
-    grid-column: 1;
-    grid-row: 1;
-    min-width: 0;
-  }
-
-  .today-bar .status {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
   .today-bar .bar-track {
-    grid-column: 1 / -1;
-    grid-row: 2;
     height: 8px;
-  }
-
-  .today-bar .value {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    text-align: left;
-    font-size: 1rem;
   }
 
   .bar-track {

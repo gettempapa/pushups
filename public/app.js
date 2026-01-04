@@ -782,7 +782,14 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
 
     const value = document.createElement('div');
     value.className = 'value';
-    value.textContent = item.value;
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = item.value;
+    const unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.textContent = metric === 'pushups' ? 'push-ups' : metric;
+    value.appendChild(count);
+    value.appendChild(unit);
 
     if (item.value > goal) {
       wrapper.classList.add('flame');
@@ -795,11 +802,13 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
       name.appendChild(trophy);
     }
 
-    let statusEl = null;
     if (metric === 'pushups') {
-      statusEl = document.createElement('div');
-      statusEl.className = statusClassForValue(item.value);
-      statusEl.textContent = statusLabelForValue(item.value);
+      const adjective = document.createElement('span');
+      const statusClass = statusClassForValue(item.value);
+      const modifier = statusClass.split(' ')[1] || 'neutral';
+      adjective.className = `adjective ${modifier}`;
+      adjective.textContent = statusLabelForValue(item.value);
+      value.appendChild(adjective);
     }
 
     track.appendChild(goalLine);
@@ -807,7 +816,6 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     track.appendChild(bar);
 
     wrapper.appendChild(name);
-    if (statusEl) wrapper.appendChild(statusEl);
     wrapper.appendChild(track);
     wrapper.appendChild(value);
     todayBars.appendChild(wrapper);
@@ -892,7 +900,7 @@ const renderSatisBars = metricSeries => {
     percentEl.textContent = `${row.ratio}%`;
     const percentLabel = document.createElement('div');
     percentLabel.className = 'percent-label';
-    percentLabel.textContent = '100 min. daily';
+    percentLabel.textContent = '100+ hit rate';
     percentGroup.appendChild(percentEl);
     percentGroup.appendChild(percentLabel);
 
