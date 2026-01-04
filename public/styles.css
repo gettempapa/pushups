@@ -516,6 +516,12 @@ h1 {
   color: var(--muted);
 }
 
+.date-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .calendar-icon {
   font-size: 1rem;
 }

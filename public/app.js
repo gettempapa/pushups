@@ -53,7 +53,7 @@ const palette = [
   '#f47bff'
 ];
 
-const chartPadding = { top: 32, right: 18, bottom: 64, left: 28 };
+const chartPadding = { top: 28, right: 12, bottom: 60, left: 24 };
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -470,12 +470,19 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
 
   ctx.fillStyle = 'rgba(76, 255, 243, 0.7)';
   ctx.font = '18px JetBrains Mono, ui-monospace, monospace';
-  ctx.fillText('0', 0, drawHeight + 28);
-  ctx.fillText(`${Math.round(maxValue)}`, 0, 16);
+  const usedY = [];
+  const maxLabelY = 16;
+  const minLabelY = drawHeight + 28;
+  ctx.fillText(`${Math.round(maxValue)}`, 0, maxLabelY);
+  usedY.push(maxLabelY);
+  ctx.fillText('0', 0, minLabelY);
+  usedY.push(minLabelY);
   if (Array.isArray(yTicks) && yTicks.length) {
     yTicks.forEach(tick => {
-      const y = drawHeight - (tick / maxValue) * drawHeight;
-      ctx.fillText(`${tick}`, 0, y + 6);
+      const y = drawHeight - (tick / maxValue) * drawHeight + 6;
+      if (usedY.some(existing => Math.abs(existing - y) < 18)) return;
+      ctx.fillText(`${tick}`, 0, y);
+      usedY.push(y);
     });
   }
 
@@ -564,6 +571,8 @@ const animate = timestamp => {
     statusEl.textContent = 'Live now';
   }
 };
+
+const inputHint = () => (window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'tap' : 'click');
 
 const renderMetricButtons = metrics => {
   metricToggle.innerHTML = '';
@@ -1002,18 +1011,18 @@ const renderBoard = metric => {
   const maxRolling = Math.max(100, ...rollingSeries.flatMap(series => series.points.map(point => point.daily)));
   const cumulativeChart = buildCombinedCard(cumulativeSeries, metric, {
     title: `YTD CUMULATIVE · ${metric}`,
-    note: 'Cumulative YTD · click or tap for details'
+    note: `Cumulative YTD · ${inputHint()} for details`
   });
   const dailyChart = buildCombinedCard(dailySeries, metric, {
     title: `DAILY VOLUME · ${metric}`,
-    note: 'Daily totals · click or tap for details',
+    note: `Daily totals · ${inputHint()} for details`,
     yTicks: [25, 50, 75, 100],
     yMax: maxDaily,
     showTotals: false
   });
   const rollingChart = buildCombinedCard(rollingSeries, metric, {
     title: `TRENDS · ${metric}`,
-    note: 'Rolling 30-day average · click or tap for details',
+    note: `Rolling 30-day average · ${inputHint()} for details`,
     yTicks: [25, 50, 75, 100],
     yMax: maxRolling,
     showTotals: false
@@ -1279,6 +1288,9 @@ if (logForm) {
 
 const loadData = async () => {
   statusEl.textContent = 'Syncing...';
+  if (latestUpdate) {
+    latestUpdate.textContent = 'Contacting servers to fetch the latest pushup data...';
+  }
   const res = await fetch('/api/data');
   if (!res.ok) {
     statusEl.textContent = 'Sync failed';
