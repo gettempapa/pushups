@@ -103,6 +103,10 @@ body::before {
   animation: updateFlash 1.6s ease-in-out infinite;
 }
 
+.hero {
+  margin-top: 140px;
+}
+
 .latest-update strong {
   color: var(--success);
 }
