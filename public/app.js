@@ -1128,12 +1128,21 @@ const renderBoard = metric => {
 const populateLogNames = series => {
   if (!logName) return;
   logName.innerHTML = '';
-  series.forEach(entry => {
+  const sorted = [...series].sort((a, b) => a.name.localeCompare(b.name));
+  sorted.forEach(entry => {
     const option = document.createElement('option');
     option.value = entry.name;
     option.textContent = entry.name;
     logName.appendChild(option);
   });
+  const saved = document.cookie
+    .split(';')
+    .map(item => item.trim())
+    .find(item => item.startsWith('pushup_name='));
+  if (saved) {
+    const value = decodeURIComponent(saved.split('=')[1] || '');
+    if (value) logName.value = value;
+  }
 };
 
 const refreshLogExisting = () => {
@@ -1189,6 +1198,12 @@ if (logModal) {
 }
 if (logName) logName.addEventListener('change', refreshLogExisting);
 if (logDate) logDate.addEventListener('change', refreshLogExisting);
+if (logName) {
+  logName.addEventListener('change', () => {
+    const value = encodeURIComponent(logName.value || '');
+    document.cookie = `pushup_name=${value}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  });
+}
 
 if (logForm) {
   logForm.addEventListener('submit', async event => {
