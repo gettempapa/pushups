@@ -1291,7 +1291,7 @@ if (logName) {
 
 const updateMascotDock = () => {
   if (!mascot || !logFab) return;
-  const docked = window.scrollY > 120;
+  const docked = window.scrollY > 60;
   if (docked) {
     const rect = logFab.getBoundingClientRect();
     const targetWidth = 140;
