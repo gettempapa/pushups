@@ -365,6 +365,7 @@ const buildCombinedCard = (metricSeries, metric, options = {}) => {
     tooltip,
     series: metricSeries,
     metric,
+    valueType: options.valueType || 'daily',
     yTicks: options.yTicks || null,
     yMax: options.yMax || null,
     hover: null,
@@ -1018,21 +1019,24 @@ const renderBoard = metric => {
   const maxRolling = Math.max(100, ...rollingSeries.flatMap(series => series.points.map(point => point.daily)));
   const cumulativeChart = buildCombinedCard(cumulativeSeries, metric, {
     title: `YTD CUMULATIVE · ${metric}`,
-    note: `Cumulative YTD · ${inputHint()} for details`
+    note: `Cumulative total · ${inputHint()} for details`,
+    valueType: 'cumulative'
   });
   const dailyChart = buildCombinedCard(dailySeries, metric, {
     title: `DAILY VOLUME · ${metric}`,
     note: `Daily totals · ${inputHint()} for details`,
     yTicks: [25, 50, 75, 100],
     yMax: maxDaily,
-    showTotals: false
+    showTotals: false,
+    valueType: 'daily'
   });
   const rollingChart = buildCombinedCard(rollingSeries, metric, {
     title: `TRENDS · ${metric}`,
     note: `Rolling 30-day average · ${inputHint()} for details`,
     yTicks: [25, 50, 75, 100],
     yMax: maxRolling,
-    showTotals: false
+    showTotals: false,
+    valueType: 'rolling'
   });
   charts = [cumulativeChart, dailyChart, rollingChart];
   renderSatisBars(alphaSeries);
@@ -1042,6 +1046,9 @@ const renderBoard = metric => {
 
   const tabs = document.createElement('section');
   tabs.className = 'chart-tabs';
+  const chartsHeader = document.createElement('div');
+  chartsHeader.className = 'charts-header';
+  chartsHeader.innerHTML = '<h2>Performance Charts</h2><p>Cumulative, daily volume, and rolling 30-day trendlines.</p>';
   const tabBar = document.createElement('div');
   tabBar.className = 'chart-tabs-bar';
   const panels = document.createElement('div');
@@ -1076,6 +1083,7 @@ const renderBoard = metric => {
     panels.appendChild(tab.chart.card);
   });
 
+  tabs.appendChild(chartsHeader);
   tabs.appendChild(tabBar);
   tabs.appendChild(panels);
   board.appendChild(tabs);
@@ -1159,9 +1167,10 @@ const renderBoard = metric => {
       if (chart.locked && !forceShow) return;
       chart.hover = { seriesIndex: closest.seriesIndex, pointIndex: closest.pointIndex };
       const point = chart.series[closest.seriesIndex].points[closest.pointIndex];
-      const adjective = statusLabelForValue(point.daily).toLowerCase();
-      chart.tooltip.textContent = `${chart.series[closest.seriesIndex].name} performed ${articleFor(adjective)} ${adjective} ${point.daily} pushups`;
-      chart.tooltip.className = `calendar-popup ${point.daily >= goal ? 'good' : 'bad'}`;
+      const value = chart.valueType === 'cumulative' ? point.close : point.daily;
+      const adjective = statusLabelForValue(value).toLowerCase();
+      chart.tooltip.textContent = `${chart.series[closest.seriesIndex].name} performed ${articleFor(adjective)} ${adjective} ${value} pushups`;
+      chart.tooltip.className = `calendar-popup ${value >= goal ? 'good' : 'bad'}`;
       const container = chart.canvas.parentElement;
       if (container) {
         container.appendChild(chart.tooltip);
