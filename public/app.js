@@ -12,7 +12,6 @@ const logFab = document.getElementById('log-fab');
 const logModal = document.getElementById('log-modal');
 const logForm = document.getElementById('log-form');
 const logName = document.getElementById('log-name');
-const logNamesList = document.getElementById('log-names');
 const logDate = document.getElementById('log-date');
 const logCount = document.getElementById('log-count');
 const logStatus = document.getElementById('log-status');
@@ -167,22 +166,22 @@ const colorForValue = value => {
 };
 
 const statusLabelForValue = value => {
-  if (value >= 160) return 'FUCKING APOCALYPTIC';
-  if (value >= 140) return 'FUCKING FERAL';
-  if (value >= 120) return 'FUCKING NUCLEAR';
-  if (value >= 110) return 'FUCKING SAVAGE';
-  if (value >= 101) return 'FUCKING RELENTLESS';
-  if (value >= 100) return 'FUCKING SATISFACTORY';
-  if (value >= 90) return 'FUCKING NEARLY-THERE';
-  if (value >= 80) return 'FUCKING STRONG';
-  if (value >= 70) return 'FUCKING SOLID';
-  if (value >= 60) return 'FUCKING STEADY';
-  if (value >= 50) return 'FUCKING WARMING';
-  if (value >= 40) return 'FUCKING DECENT';
-  if (value >= 30) return 'FUCKING WEAK';
-  if (value >= 20) return 'FUCKING POOR';
-  if (value >= 10) return 'FUCKING SAD';
-  return 'FUCKING PATHETIC';
+  if (value >= 160) return 'APOCALYPTIC';
+  if (value >= 140) return 'FERAL';
+  if (value >= 120) return 'NUCLEAR';
+  if (value >= 110) return 'SAVAGE';
+  if (value >= 101) return 'RELENTLESS';
+  if (value >= 100) return 'SATISFACTORY';
+  if (value >= 90) return 'LEGENDARY';
+  if (value >= 80) return 'HARDCORE';
+  if (value >= 70) return 'RUTHLESS';
+  if (value >= 60) return 'INTENSE';
+  if (value >= 50) return 'FIERCE';
+  if (value >= 40) return 'SCRAPPY';
+  if (value >= 30) return 'GRITTY';
+  if (value >= 20) return 'ROUGH';
+  if (value >= 10) return 'FEEBLE';
+  return 'PATHETIC';
 };
 
 const articleFor = word => {
@@ -1022,12 +1021,13 @@ const renderBoard = metric => {
 };
 
 const populateLogNames = series => {
-  if (!logNamesList) return;
-  logNamesList.innerHTML = '';
+  if (!logName) return;
+  logName.innerHTML = '';
   series.forEach(entry => {
     const option = document.createElement('option');
     option.value = entry.name;
-    logNamesList.appendChild(option);
+    option.textContent = entry.name;
+    logName.appendChild(option);
   });
 };
 
@@ -1038,7 +1038,7 @@ const openLogModal = () => {
   if (logDate) logDate.value = getPstIsoDate();
   if (logCount) logCount.value = '';
   if (logStatus) logStatus.textContent = '';
-  if (payloadCache && logNamesList && logNamesList.children.length === 0) {
+  if (payloadCache && logName && logName.options.length === 0) {
     populateLogNames(getSeriesForMetric('pushups'));
   }
 };
