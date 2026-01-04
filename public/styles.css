@@ -126,7 +126,7 @@ body::before {
 }
 
 .hero {
-  margin-top: 220px;
+  margin-top: 245px;
 }
 
 .latest-update strong {
@@ -345,8 +345,9 @@ h1 {
 
 .satis-summary-row {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
-  gap: 12px;
+  grid-template-columns: 1fr auto auto auto;
+  grid-template-rows: auto auto;
+  gap: 8px 16px;
   align-items: center;
   padding: 14px 16px;
   border-radius: var(--radius-md);
@@ -360,6 +361,12 @@ h1 {
   border-color: rgba(148, 163, 184, 0.15);
 }
 
+.satis-summary-row .name-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .satis-summary-row .name {
   font-size: 1rem;
   font-weight: 600;
@@ -371,33 +378,40 @@ h1 {
   color: var(--neon);
 }
 
-/* Mini calendar preview */
+.satis-summary-row .days-label {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Mini calendar preview - spans full width below */
 .mini-calendar {
+  grid-column: 1 / -1;
+  grid-row: 2;
   display: flex;
   gap: 2px;
-  flex-wrap: wrap;
-  max-width: 180px;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .mini-cell {
-  width: 6px;
-  height: 6px;
+  flex: 1;
+  height: 4px;
   border-radius: 1px;
   background: var(--panel);
+  min-width: 2px;
 }
 
 .mini-cell.good {
   background: var(--success);
-  box-shadow: 0 0 3px rgba(52, 211, 153, 0.5);
 }
 
 .mini-cell.bad {
   background: var(--danger);
-  box-shadow: 0 0 3px rgba(244, 114, 182, 0.5);
 }
 
 .mini-cell.empty {
-  background: rgba(148, 163, 184, 0.1);
+  background: rgba(148, 163, 184, 0.15);
 }
 
 .satis-summary-row .status-badge {
@@ -856,12 +870,14 @@ h1 {
   border-radius: 999px;
 }
 
-.goal-emoji {
+.goal-label {
   position: absolute;
-  top: -24px;
+  top: 14px;
   transform: translateX(-50%);
-  font-size: 0.875rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--success);
+  opacity: 0.8;
 }
 
 .today-bar .bar.flame {

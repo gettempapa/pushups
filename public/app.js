@@ -207,7 +207,7 @@ const statusClassForValue = value => {
 };
 
 const formatDateLabel = iso => {
-  if (!iso || iso === 'Start') return '';
+  if (!iso) return '';
   const [year, month, day] = iso.split('-').map(Number);
   if (!month || !day) return '';
   return `${month}/${day}`;
@@ -242,14 +242,7 @@ const buildCanonicalDates = dates => {
 const buildCumulativeSeries = metricSeries =>
   metricSeries.map(series => {
     let total = 0;
-    const points = [
-      {
-        date: 'Start',
-        daily: 0,
-        open: 0,
-        close: 0
-      }
-    ];
+    const points = [];
 
     series.points.forEach(point => {
       const daily = Number(point.value) || 0;
@@ -456,7 +449,6 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     for (let i = 0; i < dateCount; i += 1) {
       if (i > maxIndex + 1) break;
       const point = series.points[i];
-      if (point.date === 'Start') continue;
 
       const t = i <= maxIndex ? 1 : Math.max(0, maxIndex - (i - 1));
       if (t <= 0) continue;
@@ -515,7 +507,6 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     for (let i = 0; i < dateCount; i += 1) {
       if (i > maxIndex + 1) break;
       const point = series.points[i];
-      if (point.date === 'Start') continue;
 
       const x = dateCount > 1 ? (drawWidth / totalSegments) * i : drawWidth / 2;
       const y = drawHeight - (point.close / maxValue) * drawHeight;
@@ -541,7 +532,6 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     // Draw data points
     ctx.shadowBlur = 0;
     series.points.forEach((point, index) => {
-      if (point.date === 'Start') return;
       if (index > maxIndex) return;
       const x = dateCount > 1 ? (drawWidth / totalSegments) * index : drawWidth / 2;
       const y = drawHeight - (point.close / maxValue) * drawHeight;
@@ -755,10 +745,10 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     goalLine.className = 'goal-line';
     const goalPercent = Math.min(100, (goal / scaleMax) * 100);
     goalLine.style.left = `${goalPercent}%`;
-    const goalEmoji = document.createElement('div');
-    goalEmoji.className = 'goal-emoji';
-    goalEmoji.textContent = '💪';
-    goalEmoji.style.left = `${goalPercent}%`;
+    const goalLabel = document.createElement('div');
+    goalLabel.className = 'goal-label';
+    goalLabel.textContent = '100';
+    goalLabel.style.left = `${goalPercent}%`;
 
     const bar = document.createElement('div');
     bar.className = 'bar';
@@ -815,7 +805,7 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     }
 
     track.appendChild(goalLine);
-    track.appendChild(goalEmoji);
+    track.appendChild(goalLabel);
     track.appendChild(bar);
 
     wrapper.appendChild(name);
@@ -877,19 +867,17 @@ const renderSatisBars = metricSeries => {
     summaryRow.className = 'satis-summary-row';
     summaryRow.dataset.personIndex = index;
 
+    // Name group with label
+    const nameGroup = document.createElement('div');
+    nameGroup.className = 'name-group';
     const nameEl = document.createElement('div');
     nameEl.className = 'name';
     nameEl.textContent = row.name;
-
-    // Mini calendar preview
-    const miniCal = document.createElement('div');
-    miniCal.className = 'mini-calendar';
-    const miniData = buildMiniCalendar(row.points);
-    miniData.forEach(day => {
-      const cell = document.createElement('div');
-      cell.className = `mini-cell ${day.status}`;
-      miniCal.appendChild(cell);
-    });
+    const daysLabel = document.createElement('div');
+    daysLabel.className = 'days-label';
+    daysLabel.textContent = 'days w 100+ pushups';
+    nameGroup.appendChild(nameEl);
+    nameGroup.appendChild(daysLabel);
 
     const statusBadge = document.createElement('div');
     statusBadge.className = `status-badge ${row.ratio >= 50 ? 'good' : 'bad'}`;
@@ -905,11 +893,21 @@ const renderSatisBars = metricSeries => {
     expandBtn.className = 'satis-expand-btn';
     expandBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 
-    summaryRow.appendChild(nameEl);
-    summaryRow.appendChild(miniCal);
+    // Mini calendar preview - spans full width below
+    const miniCal = document.createElement('div');
+    miniCal.className = 'mini-calendar';
+    const miniData = buildMiniCalendar(row.points);
+    miniData.forEach(day => {
+      const cell = document.createElement('div');
+      cell.className = `mini-cell ${day.status}`;
+      miniCal.appendChild(cell);
+    });
+
+    summaryRow.appendChild(nameGroup);
     summaryRow.appendChild(statusBadge);
     summaryRow.appendChild(percentEl);
     summaryRow.appendChild(expandBtn);
+    summaryRow.appendChild(miniCal);
 
     // Click name to filter charts
     nameEl.addEventListener('click', (e) => {
@@ -1378,8 +1376,7 @@ const renderBoard = metric => {
 
     chart.series.forEach((series, seriesIndex) => {
       series.points.forEach((point, pointIndex) => {
-        if (point.date === 'Start') return;
-        const px = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
+          const px = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
         const py = height - (point.close / maxValue) * height;
           const dx = px - hoverX;
           const dy = py - hoverY;
