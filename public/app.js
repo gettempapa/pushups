@@ -1307,7 +1307,7 @@ const updateMascotDock = () => {
     const heroRect = heading.getBoundingClientRect();
     const mascotRect = mascot.getBoundingClientRect();
     if (!mascotRect.width || !mascotRect.height) return;
-    const handOffset = 14;
+    const handOffset = 0;
     const left = Math.min(
       Math.max(8, heroRect.left + heroRect.width / 2 - mascotRect.width / 2),
       window.innerWidth - mascotRect.width - 8
