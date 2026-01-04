@@ -54,7 +54,7 @@ const palette = [
   '#e879f9'
 ];
 
-const chartPadding = { top: 20, right: 8, bottom: 44, left: 32 };
+const chartPadding = { top: 20, right: 16, bottom: 44, left: 40 };
 
 const lerp = (a, b, t) => a + (b - a) * t;
 

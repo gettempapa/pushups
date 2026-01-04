@@ -67,9 +67,9 @@ body::before {
 }
 
 .page {
-  max-width: 1800px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 32px 40px 80px;
+  padding: 32px 24px 80px;
 }
 
 .warning-banner {
@@ -268,7 +268,7 @@ h1 {
 
 .today {
   margin-top: 24px;
-  padding: 24px;
+  padding: 20px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--panel-border);
   background: var(--panel);
@@ -278,7 +278,7 @@ h1 {
 
 .stats {
   margin-top: 20px;
-  padding: 24px;
+  padding: 20px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--panel-border);
   background: var(--panel);
@@ -1088,7 +1088,7 @@ canvas {
 }
 
 .card.combined {
-  padding: 8px;
+  padding: 12px;
 }
 
 .card::before {
@@ -1227,7 +1227,7 @@ canvas {
 .chart-wrap {
   position: relative;
   border-radius: var(--radius-lg);
-  padding: 4px;
+  padding: 8px;
   background: linear-gradient(135deg, var(--bg-2), var(--bg));
   border: 1px solid var(--panel-border);
   width: 100%;
@@ -1534,7 +1534,7 @@ canvas {
 }
 
 .chart-tabs {
-  padding: 12px;
+  padding: 16px;
   border-radius: var(--radius-xl);
   background: var(--panel);
   border: 1px solid var(--panel-border);
