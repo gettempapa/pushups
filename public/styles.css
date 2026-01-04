@@ -516,6 +516,10 @@ h1 {
   color: var(--muted);
 }
 
+.calendar-icon {
+  font-size: 1rem;
+}
+
 .day-filter input {
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.35);
@@ -1068,7 +1072,8 @@ canvas {
   position: fixed;
   top: 18px;
   right: 18px;
-  width: 1280px;
+  width: min(40vw, 320px);
+  max-width: 40vw;
   height: auto;
   z-index: 70;
   pointer-events: none;
@@ -1346,5 +1351,9 @@ canvas {
     right: 16px;
     bottom: 16px;
     text-align: center;
+  }
+
+  .pushup-guy {
+    width: min(60vw, 240px);
   }
 }
