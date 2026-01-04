@@ -22,7 +22,7 @@ const mascot = document.querySelector('.pushup-guy');
 
 const animation = {
   start: null,
-  duration: 4200,
+  duration: 2400,
   progress: 0,
   running: false
 };
@@ -42,16 +42,16 @@ let documentClickBound = false;
 
 const goal = 100;
 const palette = [
-  '#36f29e',
-  '#00a2ff',
-  '#ff2d55',
-  '#ffd166',
-  '#8c7bff',
-  '#ff8f5f',
-  '#2de2e6',
-  '#ff77a9',
-  '#b4ff5f',
-  '#f47bff'
+  '#22d3ee',
+  '#a78bfa',
+  '#f472b6',
+  '#fbbf24',
+  '#34d399',
+  '#fb7185',
+  '#60a5fa',
+  '#f97316',
+  '#a3e635',
+  '#e879f9'
 ];
 
 const chartPadding = { top: 28, right: 8, bottom: 58, left: 18 };
@@ -155,10 +155,11 @@ const placePopup = (popup, container, desiredLeft, desiredTop) => {
 
 const colorForValue = value => {
   const ratio = Math.min(Math.max(value / goal, 0), 1);
-  const start = [92, 78, 66];
-  const mid = [190, 80, 40];
-  const end = [255, 122, 0];
-  const midPoint = 0.6;
+  // Modern gradient: muted pink -> cyan -> bright green
+  const start = [100, 116, 139];  // Slate
+  const mid = [34, 211, 238];     // Cyan
+  const end = [52, 211, 153];     // Green
+  const midPoint = 0.7;
   if (ratio < midPoint) {
     const t = ratio / midPoint;
     const r = Math.round(lerp(start[0], mid[0], t));
@@ -375,6 +376,17 @@ const buildCombinedCard = (metricSeries, metric, options = {}) => {
   };
 };
 
+const hexToRgb = hex => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : { r: 0, g: 0, b: 0 };
+};
+
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+
 const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, hoverSeries, width, height, yTicks, yMaxOverride) => {
   const padding = chartPadding;
   if (!seriesList.length) return;
@@ -389,16 +401,19 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
 
   const drawWidth = width - padding.left - padding.right;
   const drawHeight = height - padding.top - padding.bottom;
+  const easedProgress = easeOutCubic(progress);
 
   ctx.save();
   ctx.translate(padding.left, padding.top);
 
-  ctx.strokeStyle = 'rgba(76, 255, 243, 0.12)';
+  // Draw refined grid lines
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
   ctx.lineWidth = 1;
   if (Array.isArray(yTicks) && yTicks.length) {
     yTicks.forEach(tick => {
       const y = drawHeight - (tick / maxValue) * drawHeight;
       ctx.beginPath();
+      ctx.setLineDash([4, 6]);
       ctx.moveTo(0, y);
       ctx.lineTo(drawWidth, y);
       ctx.stroke();
@@ -407,90 +422,178 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     for (let i = 0; i <= 4; i += 1) {
       const y = (drawHeight / 4) * i;
       ctx.beginPath();
+      ctx.setLineDash([4, 6]);
       ctx.moveTo(0, y);
       ctx.lineTo(drawWidth, y);
       ctx.stroke();
     }
   }
+  ctx.setLineDash([]);
 
   const totalSegments = Math.max(1, dateCount - 1);
-  const maxIndex = totalSegments * progress;
+  const maxIndex = totalSegments * easedProgress;
 
   const hasSelection = hoverSeries !== null && hoverSeries.size > 0;
   const order = hasSelection
     ? seriesList.map((_, index) => index).filter(index => !hoverSeries.has(index)).concat([...hoverSeries])
     : seriesList.map((_, index) => index);
 
+  // Draw gradient fills first (behind lines)
   order.forEach(seriesIndex => {
     const series = seriesList[seriesIndex];
     const lineColor = palette[seriesIndex % palette.length];
-    const scale = isCoarsePointer() ? 0.8 : 1;
+    const rgb = hexToRgb(lineColor);
+    const dimmed = hasSelection && !hoverSeries.has(seriesIndex);
+
+    if (dimmed) return;
+
+    ctx.save();
+    ctx.beginPath();
+
+    let firstX = null;
+    let lastX = null;
+
+    for (let i = 0; i < dateCount; i += 1) {
+      if (i > maxIndex + 1) break;
+      const point = series.points[i];
+      if (point.date === 'Start') continue;
+
+      const t = i <= maxIndex ? 1 : Math.max(0, maxIndex - (i - 1));
+      if (t <= 0) continue;
+
+      const x = dateCount > 1 ? (drawWidth / totalSegments) * i : drawWidth / 2;
+      const y = drawHeight - (point.close / maxValue) * drawHeight;
+
+      if (firstX === null) {
+        firstX = x;
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+      lastX = x;
+    }
+
+    if (firstX !== null && lastX !== null) {
+      ctx.lineTo(lastX, drawHeight);
+      ctx.lineTo(firstX, drawHeight);
+      ctx.closePath();
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, drawHeight);
+      gradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`);
+      gradient.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08)`);
+      gradient.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // Draw smooth curves
+  order.forEach(seriesIndex => {
+    const series = seriesList[seriesIndex];
+    const lineColor = palette[seriesIndex % palette.length];
+    const scale = isCoarsePointer() ? 0.85 : 1;
     const dimmed = hasSelection && !hoverSeries.has(seriesIndex);
     const highlighted = hasSelection && hoverSeries.has(seriesIndex);
-    ctx.lineWidth = (highlighted ? 4 : dimmed ? 1.6 : 3) * scale;
-    ctx.shadowBlur = highlighted ? 20 : 14;
-    ctx.shadowColor = highlighted ? lineColor : 'rgba(94, 234, 212, 0.35)';
-    ctx.globalAlpha = dimmed ? 0.5 : 1;
-    ctx.strokeStyle = dimmed ? 'rgba(148, 163, 184, 0.9)' : lineColor;
-    for (let i = 0; i < dateCount - 1; i += 1) {
-      if (i > maxIndex) break;
-      const current = series.points[i + 1];
-      const previous = series.points[i];
-      const t = Math.min(1, maxIndex - i);
 
-      const x0 = dateCount > 1 ? (drawWidth / totalSegments) * i : drawWidth / 2;
-      const x1 = dateCount > 1 ? (drawWidth / totalSegments) * (i + t) : drawWidth / 2;
-      const y0 = drawHeight - (previous.close / maxValue) * drawHeight;
-      const y1 = drawHeight - (lerp(previous.close, current.close, t) / maxValue) * drawHeight;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = (highlighted ? 3.5 : dimmed ? 1.5 : 2.5) * scale;
+    ctx.globalAlpha = dimmed ? 0.35 : 1;
 
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
-      ctx.stroke();
+    // Glow effect
+    if (!dimmed) {
+      ctx.shadowBlur = highlighted ? 16 : 10;
+      ctx.shadowColor = lineColor;
     }
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = dimmed ? 0.6 : 1;
 
+    ctx.strokeStyle = dimmed ? 'rgba(148, 163, 184, 0.6)' : lineColor;
+    ctx.beginPath();
+
+    let started = false;
+    for (let i = 0; i < dateCount; i += 1) {
+      if (i > maxIndex + 1) break;
+      const point = series.points[i];
+      if (point.date === 'Start') continue;
+
+      const x = dateCount > 1 ? (drawWidth / totalSegments) * i : drawWidth / 2;
+      const y = drawHeight - (point.close / maxValue) * drawHeight;
+
+      if (!started) {
+        ctx.moveTo(x, y);
+        started = true;
+      } else {
+        // Smooth curve using quadratic bezier
+        const prevPoint = series.points[i - 1];
+        const prevX = dateCount > 1 ? (drawWidth / totalSegments) * (i - 1) : drawWidth / 2;
+        const prevY = drawHeight - (prevPoint.close / maxValue) * drawHeight;
+        const cpX = (prevX + x) / 2;
+        ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+        if (i <= maxIndex) {
+          ctx.quadraticCurveTo(x, y, x, y);
+        }
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Draw data points
+    ctx.shadowBlur = 0;
     series.points.forEach((point, index) => {
       if (point.date === 'Start') return;
       if (index > maxIndex) return;
       const x = dateCount > 1 ? (drawWidth / totalSegments) * index : drawWidth / 2;
       const y = drawHeight - (point.close / maxValue) * drawHeight;
-      const radius = (highlighted ? 7 : dimmed ? 4 : 6) * scale;
+      const radius = (highlighted ? 5 : dimmed ? 3 : 4) * scale;
+
       ctx.save();
-      ctx.shadowBlur = dimmed ? 0 : 10;
-      ctx.shadowColor = dimmed ? 'transparent' : lineColor;
-      ctx.fillStyle = dimmed ? 'rgba(148, 163, 184, 0.9)' : lineColor;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 2 * scale;
+      ctx.globalAlpha = dimmed ? 0.4 : 1;
+
+      // Outer glow
+      if (!dimmed) {
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = lineColor;
+      }
+
+      // Point fill
+      ctx.fillStyle = dimmed ? 'rgba(148, 163, 184, 0.6)' : lineColor;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
+
+      // White inner dot
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.restore();
     });
-    ctx.globalAlpha = 1;
   });
 
-  ctx.fillStyle = 'rgba(76, 255, 243, 0.7)';
-  ctx.font = '18px JetBrains Mono, ui-monospace, monospace';
+  // Draw axis labels
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
+  ctx.font = '12px JetBrains Mono, ui-monospace, monospace';
   const usedY = [];
-  const maxLabelY = 16;
-  const minLabelY = drawHeight + 28;
+  const maxLabelY = 4;
+  const minLabelY = drawHeight + 20;
   ctx.fillText(`${Math.round(maxValue)}`, 0, maxLabelY);
   usedY.push(maxLabelY);
   ctx.fillText('0', 0, minLabelY);
   usedY.push(minLabelY);
   if (Array.isArray(yTicks) && yTicks.length) {
     yTicks.forEach(tick => {
-      const y = drawHeight - (tick / maxValue) * drawHeight + 6;
-      if (usedY.some(existing => Math.abs(existing - y) < 18)) return;
+      const y = drawHeight - (tick / maxValue) * drawHeight + 4;
+      if (usedY.some(existing => Math.abs(existing - y) < 16)) return;
       ctx.fillText(`${tick}`, 0, y);
       usedY.push(y);
     });
   }
 
   let lastLabelRight = -Infinity;
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
   for (let i = 0; i < dateCount; i += 1) {
     const label = formatDateLabel(seriesList[0].points[i].date);
     if (!label) continue;
@@ -502,22 +605,37 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     if (labelX + labelWidth > drawWidth) labelX = drawWidth - labelWidth;
     const left = labelX;
     const right = labelX + labelWidth;
-    if (!isEdge && left <= lastLabelRight + 16) continue;
-    ctx.fillText(label, labelX, drawHeight + 34);
+    if (!isEdge && left <= lastLabelRight + 20) continue;
+    ctx.fillText(label, labelX, drawHeight + 32);
     lastLabelRight = right;
   }
 
+  // Highlight hovered point
   if (hoverState) {
     const { seriesIndex, pointIndex } = hoverState;
     const series = seriesList[seriesIndex];
     if (series) {
       const point = series.points[pointIndex];
       if (point && point.date !== 'Start') {
+        const lineColor = palette[seriesIndex % palette.length];
         const x = dateCount > 1 ? (drawWidth / totalSegments) * pointIndex : drawWidth / 2;
         const y = drawHeight - (point.close / maxValue) * drawHeight;
+
+        // Pulse ring
+        ctx.save();
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = lineColor;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Center dot
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fill();
       }
     }
