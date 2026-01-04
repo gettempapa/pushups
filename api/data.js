@@ -27,6 +27,8 @@ const parseDateString = value => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const toISODate = date => date.toISOString().slice(0, 10);
+
 const getAuth = () => {
   const rawB64 = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_B64;
   if (rawB64) {
@@ -103,8 +105,10 @@ export default async function handler(req, res) {
 
         const normalizedName = String(name).trim();
         const normalizedDate = String(date).trim();
+        const parsedDate = parseDateString(normalizedDate);
+        const isoKey = parsedDate ? toISODate(parsedDate) : normalizedDate;
 
-        if (!dateOrder.includes(normalizedDate)) dateOrder.push(normalizedDate);
+        if (!dateOrder.includes(isoKey)) dateOrder.push(isoKey);
         if (!nameOrder.includes(normalizedName)) nameOrder.push(normalizedName);
 
         metricColumns.forEach(metric => {
@@ -121,7 +125,7 @@ export default async function handler(req, res) {
 
           if (!totalsByName.has(normalizedName)) totalsByName.set(normalizedName, new Map());
           const perDate = totalsByName.get(normalizedName);
-          perDate.set(normalizedDate, (perDate.get(normalizedDate) || 0) + safeValue);
+          perDate.set(isoKey, (perDate.get(isoKey) || 0) + safeValue);
         });
       });
 

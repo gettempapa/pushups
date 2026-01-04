@@ -29,6 +29,28 @@ const parseDateString = value => {
 
 const toISODate = date => date.toISOString().slice(0, 10);
 
+const isIsoDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim());
+
+const formatSheetDate = iso => {
+  const date = new Date(`${iso}T00:00:00Z`);
+  const month = date.getUTCMonth() + 1;
+  const day = date.getUTCDate();
+  const year = String(date.getUTCFullYear()).slice(-2);
+  return `${month}/${day}/${year}`;
+};
+
+const pickDateFormatter = (values, dateIndex) => {
+  const rows = values.slice(1);
+  for (const row of rows) {
+    const raw = row[dateIndex];
+    if (!raw) continue;
+    const trimmed = String(raw).trim();
+    if (isIsoDate(trimmed)) return iso => iso;
+    if (trimmed.includes('/')) return formatSheetDate;
+  }
+  return iso => iso;
+};
+
 const getAuth = () => {
   const rawB64 = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_B64;
   if (rawB64) {
@@ -106,6 +128,7 @@ export default async function handler(req, res) {
     const pushupsIndex = lowerHeaders.indexOf('pushups');
 
     if (dateIndex !== -1 && nameIndex !== -1 && pushupsIndex !== -1) {
+      const formatDate = pickDateFormatter(values, dateIndex);
       let amount = value;
       if (mode === 'set' && Number.isFinite(existingTotal)) {
         amount = value - Number(existingTotal);
@@ -116,7 +139,7 @@ export default async function handler(req, res) {
       }
 
       const row = Array(headers.length).fill('');
-      row[dateIndex] = safeDate;
+      row[dateIndex] = formatDate(safeDate);
       row[nameIndex] = safeName;
       row[pushupsIndex] = amount;
 
@@ -138,6 +161,7 @@ export default async function handler(req, res) {
       return;
     }
 
+    const formatDate = pickDateFormatter(values, 0);
     let targetRowIndex = -1;
     for (let i = 1; i < values.length; i += 1) {
       const rawDate = values[i][0];
@@ -155,7 +179,7 @@ export default async function handler(req, res) {
 
     if (targetRowIndex === -1) {
       const row = Array(headers.length).fill('');
-      row[0] = safeDate;
+      row[0] = formatDate(safeDate);
       row[nameColumnIndex] = value;
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
