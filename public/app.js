@@ -16,6 +16,8 @@ const logDate = document.getElementById('log-date');
 const logCount = document.getElementById('log-count');
 const logStatus = document.getElementById('log-status');
 const logClose = document.getElementById('log-close');
+const logExisting = document.getElementById('log-existing');
+const logExistingText = document.getElementById('log-existing-text');
 
 const animation = {
   start: null,
@@ -1031,6 +1033,27 @@ const populateLogNames = series => {
   });
 };
 
+const refreshLogExisting = () => {
+  if (!logName || !logDate || !logExisting || !logExistingText) return;
+  const name = logName.value.trim();
+  const date = logDate.value;
+  if (!name || !date) {
+    logExisting.setAttribute('aria-hidden', 'true');
+    logExisting.classList.remove('visible');
+    return;
+  }
+  const series = getSeriesForMetric('pushups');
+  const existing = series.find(entry => entry.name === name)?.points.find(point => point.date === date)?.value ?? 0;
+  if (existing > 0) {
+    logExistingText.textContent = `${name} already has ${existing} pushups on ${date}. Choose how to log this entry.`;
+    logExisting.setAttribute('aria-hidden', 'false');
+    logExisting.classList.add('visible');
+  } else {
+    logExisting.setAttribute('aria-hidden', 'true');
+    logExisting.classList.remove('visible');
+  }
+};
+
 const openLogModal = () => {
   if (!logModal) return;
   logModal.classList.add('open');
@@ -1038,9 +1061,14 @@ const openLogModal = () => {
   if (logDate) logDate.value = getPstIsoDate();
   if (logCount) logCount.value = '';
   if (logStatus) logStatus.textContent = '';
+  if (logExisting) {
+    logExisting.setAttribute('aria-hidden', 'true');
+    logExisting.classList.remove('visible');
+  }
   if (payloadCache && logName && logName.options.length === 0) {
     populateLogNames(getSeriesForMetric('pushups'));
   }
+  refreshLogExisting();
 };
 
 const closeLogModal = () => {
@@ -1056,6 +1084,8 @@ if (logModal) {
     if (event.target === logModal) closeLogModal();
   });
 }
+if (logName) logName.addEventListener('change', refreshLogExisting);
+if (logDate) logDate.addEventListener('change', refreshLogExisting);
 
 if (logForm) {
   logForm.addEventListener('submit', async event => {
@@ -1073,16 +1103,16 @@ if (logForm) {
     const series = getSeriesForMetric('pushups');
     const existing = series.find(entry => entry.name === name)?.points.find(point => point.date === date)?.value ?? 0;
     let mode = 'add';
-    if (existing > 0) {
-      const add = window.confirm(`${name} already has ${existing} pushups on ${date}. Add to that total?`);
-      if (add) {
-        mode = 'add';
-      } else {
-        const replace = window.confirm(`Replace that total with ${count}?`);
-        if (!replace) return;
-        mode = 'set';
-      }
+    if (existing > 0 && logExisting && logExistingText) {
+      logExistingText.textContent = `${name} already has ${existing} pushups on ${date}. Choose how to log this entry.`;
+      logExisting.setAttribute('aria-hidden', 'false');
+      logExisting.classList.add('visible');
+    } else if (logExisting) {
+      logExisting.setAttribute('aria-hidden', 'true');
+      logExisting.classList.remove('visible');
     }
+    const selected = logForm.querySelector('input[name="log-mode"]:checked');
+    mode = selected?.value || 'add';
 
     logStatus.textContent = 'Saving...';
     try {

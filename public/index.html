@@ -95,6 +95,19 @@
             <span>Pushups</span>
             <input id="log-count" type="number" min="0" step="1" required />
           </label>
+          <div id="log-existing" class="log-existing" aria-hidden="true">
+            <p id="log-existing-text"></p>
+            <div class="log-choice">
+              <label>
+                <input type="radio" name="log-mode" value="add" checked />
+                <span>Add to existing total</span>
+              </label>
+              <label>
+                <input type="radio" name="log-mode" value="set" />
+                <span>Replace existing total</span>
+              </label>
+            </div>
+          </div>
           <div class="log-actions">
             <span id="log-status" class="log-status"></span>
             <button class="log-submit" type="submit">Save</button>

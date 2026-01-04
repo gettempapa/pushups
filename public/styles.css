@@ -945,6 +945,40 @@ canvas {
   font-size: 1rem;
 }
 
+.log-existing {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  color: var(--muted);
+  font-size: 0.9rem;
+  display: none;
+}
+
+.log-existing.visible {
+  display: grid;
+  gap: 10px;
+}
+
+.log-existing p {
+  margin: 0;
+}
+
+.log-choice {
+  display: grid;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.log-choice label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+}
+
 .log-actions {
   display: flex;
   align-items: center;
