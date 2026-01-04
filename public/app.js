@@ -54,7 +54,7 @@ const palette = [
   '#e879f9'
 ];
 
-const chartPadding = { top: 28, right: 8, bottom: 58, left: 18 };
+const chartPadding = { top: 24, right: 12, bottom: 48, left: 36 };
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -1428,7 +1428,7 @@ const updateMascotDock = () => {
   if (docked) {
     const rect = logFab.getBoundingClientRect();
     const targetWidth = 150;
-    const left = Math.max(12, rect.right - targetWidth);
+    const left = Math.max(12, rect.right - targetWidth + 30);
     const top = Math.max(12, rect.bottom - targetWidth + 90);
     mascot.style.setProperty('--dock-left', `${left}px`);
     mascot.style.setProperty('--dock-top', `${top}px`);

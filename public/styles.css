@@ -126,7 +126,7 @@ body::before {
 }
 
 .hero {
-  margin-top: 140px;
+  margin-top: 170px;
 }
 
 .latest-update strong {
@@ -822,7 +822,7 @@ canvas {
 }
 
 .card.combined {
-  padding: 24px;
+  padding: 16px;
 }
 
 .card::before {
@@ -961,7 +961,7 @@ canvas {
 .chart-wrap {
   position: relative;
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 8px;
   background: linear-gradient(135deg, var(--bg-2), var(--bg));
   border: 1px solid var(--panel-border);
   width: 100%;
@@ -1261,7 +1261,7 @@ canvas {
 }
 
 .chart-tabs {
-  padding: 24px;
+  padding: 16px;
   border-radius: var(--radius-xl);
   background: var(--panel);
   border: 1px solid var(--panel-border);
