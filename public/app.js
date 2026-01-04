@@ -85,15 +85,17 @@ const getPstParts = () => {
 
 const updateDeadlineClock = () => {
   if (!deadlineClock) return;
+  const now = new Date();
   const { year, month, day, hour, minute, second } = getPstParts();
-  const nowUtc = Date.UTC(year, month - 1, day, hour, minute, second);
+  const nowUtc = Date.UTC(year, month - 1, day, hour, minute, second) + now.getMilliseconds();
   const endUtc = Date.UTC(year, month - 1, day + 1, 0, 0, 0);
   const remaining = Math.max(0, endUtc - nowUtc);
   const totalSeconds = Math.floor(remaining / 1000);
   const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
   const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
-  deadlineClock.textContent = `${hours}:${minutes}:${seconds}`;
+  const millis = String(Math.floor(remaining % 1000)).padStart(3, '0');
+  deadlineClock.textContent = `${hours}:${minutes}:${seconds}.${millis}`;
 };
 
 const getPstIsoDate = () => {
@@ -102,6 +104,13 @@ const getPstIsoDate = () => {
 };
 
 const toISODate = date => date.toISOString().slice(0, 10);
+
+const formatPstTimestamp = () => {
+  const now = new Date();
+  const { year, month, day, hour, minute, second } = getPstParts();
+  const millis = String(now.getMilliseconds()).padStart(3, '0');
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}.${millis} PST`;
+};
 
 const colorForValue = value => {
   const ratio = Math.min(Math.max(value / goal, 0), 1);
@@ -213,7 +222,18 @@ const buildCumulativeSeries = metricSeries =>
     return { name: series.name, points };
   });
 
-const buildCombinedCard = (metricSeries, metric) => {
+const buildDailySeries = metricSeries =>
+  metricSeries.map(series => ({
+    name: series.name,
+    points: series.points.map(point => ({
+      date: point.date,
+      daily: Number(point.value) || 0,
+      open: Number(point.value) || 0,
+      close: Number(point.value) || 0
+    }))
+  }));
+
+const buildCombinedCard = (metricSeries, metric, options = {}) => {
   const card = document.createElement('article');
   card.className = 'card flash combined';
 
@@ -222,14 +242,14 @@ const buildCombinedCard = (metricSeries, metric) => {
 
   const name = document.createElement('div');
   name.className = 'name';
-  name.textContent = `YTD CUMULATIVE · ${metric}`;
+  name.textContent = options.title || `YTD CUMULATIVE · ${metric}`;
 
   const badges = document.createElement('div');
   badges.className = 'badges';
 
   const note = document.createElement('span');
   note.className = 'badge';
-  note.textContent = 'Cumulative YTD · hover for details';
+  note.textContent = options.note || 'Cumulative YTD · hover for details';
   badges.appendChild(note);
 
   header.appendChild(name);
@@ -283,6 +303,8 @@ const buildCombinedCard = (metricSeries, metric) => {
     tooltip,
     series: metricSeries,
     metric,
+    yTicks: options.yTicks || null,
+    yMax: options.yMax || null,
     hover: null,
     hoverSeries: null,
     selectedSeries: new Set(),
@@ -290,28 +312,39 @@ const buildCombinedCard = (metricSeries, metric) => {
   };
 };
 
-const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, hoverSeries, width, height) => {
+const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, hoverSeries, width, height, yTicks, yMaxOverride) => {
   const padding = { top: 26, right: 40, bottom: 50, left: 60 };
   if (!seriesList.length) return;
 
   const dateCount = seriesList[0].points.length;
   if (!dateCount) return;
 
-  const maxValue = Math.max(
+  const computedMax = Math.max(
     ...seriesList.flatMap(series => series.points.map(point => point.close))
   );
+  const maxValue = Math.max(yMaxOverride || 0, computedMax || 0, 1);
 
   ctx.save();
   ctx.translate(padding.left, padding.top);
 
   ctx.strokeStyle = 'rgba(76, 255, 243, 0.12)';
   ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i += 1) {
-    const y = (height / 4) * i;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
+  if (Array.isArray(yTicks) && yTicks.length) {
+    yTicks.forEach(tick => {
+      const y = height - (tick / maxValue) * height;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    });
+  } else {
+    for (let i = 0; i <= 4; i += 1) {
+      const y = (height / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
   }
 
   const totalSegments = Math.max(1, dateCount - 1);
@@ -375,14 +408,25 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
   ctx.font = '20px JetBrains Mono, ui-monospace, monospace';
   ctx.fillText('0', 0, height + 20);
   ctx.fillText(`${Math.round(maxValue)}`, 0, 12);
+  if (Array.isArray(yTicks) && yTicks.length) {
+    yTicks.forEach(tick => {
+      const y = height - (tick / maxValue) * height;
+      ctx.fillText(`${tick}`, 0, y + 6);
+    });
+  }
 
-  const labelCount = Math.min(dateCount, 6);
-  const step = Math.max(1, Math.floor((dateCount - 1) / (labelCount - 1 || 1)));
-  for (let i = 0; i < dateCount; i += step) {
+  let lastLabelRight = -Infinity;
+  for (let i = 0; i < dateCount; i += 1) {
     const label = formatDateLabel(seriesList[0].points[i].date);
     if (!label) continue;
     const x = dateCount > 1 ? (width / totalSegments) * i : width / 2;
-    ctx.fillText(label, x - 8, height + 26);
+    const isEdge = i === 0 || i === dateCount - 1;
+    const labelWidth = ctx.measureText(label).width;
+    const left = x - labelWidth / 2;
+    const right = x + labelWidth / 2;
+    if (!isEdge && left <= lastLabelRight + 12) continue;
+    ctx.fillText(label, x - labelWidth / 2, height + 26);
+    lastLabelRight = right;
   }
 
   if (hoverState) {
@@ -432,7 +476,9 @@ const drawAll = progress => {
       chart.hover,
       chart.hoverSeries,
       rect.width - 60 - 40,
-      rect.height - 26 - 50
+      rect.height - 26 - 50,
+      chart.yTicks,
+      chart.yMax
     );
   });
 };
@@ -747,12 +793,13 @@ const renderLatestUpdate = (metricSeries, dates) => {
     }
   });
 
+  const timestamp = formatPstTimestamp();
   if (topValue <= 0 || !topName) {
-    latestUpdate.textContent = `Most recent update (${latestDate}): no pushups logged.`;
+    latestUpdate.textContent = `Most recent update (${latestDate} · ${timestamp}): no pushups logged.`;
     return;
   }
 
-  latestUpdate.innerHTML = `<span class="bang">❗</span>Most recent update (${latestDate}): <strong>${topName}</strong> just logged <strong>${topValue}</strong> pushups.`;
+  latestUpdate.innerHTML = `<span class="bang">❗</span>Most recent update (${latestDate} · ${timestamp}): <strong>${topName}</strong> just logged <strong>${topValue}</strong> pushups.`;
 };
 const setupDateFilter = dates => {
   isoIndexMap = new Map();
@@ -810,8 +857,19 @@ const renderBoard = metric => {
   dailyCache = { metric, series: normalizedSeries, dates };
   renderTodayBars(normalizedSeries, metric, currentDay || dates[dates.length - 1], dates);
   const cumulativeSeries = buildCumulativeSeries(normalizedSeries);
-  const chart = buildCombinedCard(cumulativeSeries, metric);
-  charts = [chart];
+  const dailySeries = buildDailySeries(normalizedSeries);
+  const maxDaily = Math.max(100, ...dailySeries.flatMap(series => series.points.map(point => point.daily)));
+  const cumulativeChart = buildCombinedCard(cumulativeSeries, metric, {
+    title: `YTD CUMULATIVE · ${metric}`,
+    note: 'Cumulative YTD · hover for details'
+  });
+  const dailyChart = buildCombinedCard(dailySeries, metric, {
+    title: `DAILY VOLUME · ${metric}`,
+    note: 'Daily totals · hover for details',
+    yTicks: [25, 50, 75, 100],
+    yMax: maxDaily
+  });
+  charts = [cumulativeChart, dailyChart];
   renderSatisBars(normalizedSeries);
   renderVictories(normalizedSeries, dates);
   renderAverages(normalizedSeries);
@@ -819,84 +877,94 @@ const renderBoard = metric => {
   renderSatisBars(normalizedSeries);
   renderVictories(normalizedSeries, dates);
 
-  chart.legendItems.forEach((item, index) => {
-    item.addEventListener('click', () => {
-      if (chart.selectedSeries.has(index)) {
-        chart.selectedSeries.delete(index);
-      } else {
-        chart.selectedSeries.add(index);
-      }
-      chart.hoverSeries = chart.selectedSeries.size ? chart.selectedSeries : null;
-      chart.legendItems.forEach((el, itemIndex) => {
-        el.classList.toggle('active', chart.selectedSeries.has(itemIndex));
-      });
-      drawAll(animation.progress);
-    });
-  });
-
-  const handleHover = event => {
-    const rect = chart.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const padding = { top: 26, right: 40, bottom: 50, left: 60 };
-    const width = rect.width - padding.left - padding.right;
-    const height = rect.height - padding.top - padding.bottom;
-    if (x < padding.left || x > padding.left + width || y < padding.top || y > padding.top + height) {
-      chart.hover = null;
-      if (chart.tooltip.parentElement) chart.tooltip.remove();
-      drawAll(animation.progress);
-      return;
-    }
-
-    const dateCount = chart.series[0]?.points.length || 0;
-    if (!dateCount) return;
-    const totalSegments = Math.max(1, dateCount - 1);
-    const maxValue = Math.max(
-      ...chart.series.flatMap(series => series.points.map(point => point.close))
-    );
-
-    const hoverX = x - padding.left;
-    const hoverY = y - padding.top;
-    let closest = null;
-    let closestDistance = Infinity;
-
-    chart.series.forEach((series, seriesIndex) => {
-      series.points.forEach((point, pointIndex) => {
-        const px = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
-        const py = height - (point.close / maxValue) * height;
-        const dx = px - hoverX;
-        const dy = py - hoverY;
-        const distance = Math.hypot(dx, dy);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closest = { seriesIndex, pointIndex, px, py };
+  const attachLegend = chart => {
+    chart.legendItems.forEach((item, index) => {
+      item.addEventListener('click', () => {
+        if (chart.selectedSeries.has(index)) {
+          chart.selectedSeries.delete(index);
+        } else {
+          chart.selectedSeries.add(index);
         }
+        chart.hoverSeries = chart.selectedSeries.size ? chart.selectedSeries : null;
+        chart.legendItems.forEach((el, itemIndex) => {
+          el.classList.toggle('active', chart.selectedSeries.has(itemIndex));
+        });
+        drawAll(animation.progress);
       });
     });
-
-    if (!closest || closestDistance > 12) {
-      chart.hover = null;
-      if (chart.tooltip.parentElement) chart.tooltip.remove();
-      drawAll(animation.progress);
-      return;
-    }
-
-    chart.hover = { seriesIndex: closest.seriesIndex, pointIndex: closest.pointIndex };
-    const point = chart.series[closest.seriesIndex].points[closest.pointIndex];
-    const adjective = statusLabelForValue(point.daily).toLowerCase();
-    chart.tooltip.textContent = `${chart.series[closest.seriesIndex].name} performed ${articleFor(adjective)} ${adjective} ${point.daily} pushups`;
-    chart.tooltip.className = `calendar-popup ${point.daily >= goal ? 'good' : 'bad'}`;
-    chart.tooltip.style.left = `${padding.left + closest.px + 12}px`;
-    chart.tooltip.style.top = `${padding.top + closest.py - 12}px`;
-    chart.canvas.parentElement?.appendChild(chart.tooltip);
-    drawAll(animation.progress);
   };
 
-  chart.canvas.addEventListener('mousemove', handleHover);
-  chart.canvas.addEventListener('mouseleave', () => {
-    chart.hover = null;
-    if (chart.tooltip.parentElement) chart.tooltip.remove();
-    drawAll(animation.progress);
+  const attachHover = chart => {
+    const handleHover = event => {
+      const rect = chart.canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const padding = { top: 26, right: 40, bottom: 50, left: 60 };
+      const width = rect.width - padding.left - padding.right;
+      const height = rect.height - padding.top - padding.bottom;
+      if (x < padding.left || x > padding.left + width || y < padding.top || y > padding.top + height) {
+        chart.hover = null;
+        if (chart.tooltip.parentElement) chart.tooltip.remove();
+        drawAll(animation.progress);
+        return;
+      }
+
+      const dateCount = chart.series[0]?.points.length || 0;
+      if (!dateCount) return;
+      const totalSegments = Math.max(1, dateCount - 1);
+      const maxValue = Math.max(
+        chart.yMax || 0,
+        ...chart.series.flatMap(series => series.points.map(point => point.close))
+      );
+
+      const hoverX = x - padding.left;
+      const hoverY = y - padding.top;
+      let closest = null;
+      let closestDistance = Infinity;
+
+      chart.series.forEach((series, seriesIndex) => {
+        series.points.forEach((point, pointIndex) => {
+          const px = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
+          const py = height - (point.close / maxValue) * height;
+          const dx = px - hoverX;
+          const dy = py - hoverY;
+          const distance = Math.hypot(dx, dy);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closest = { seriesIndex, pointIndex, px, py };
+          }
+        });
+      });
+
+      if (!closest || closestDistance > 12) {
+        chart.hover = null;
+        if (chart.tooltip.parentElement) chart.tooltip.remove();
+        drawAll(animation.progress);
+        return;
+      }
+
+      chart.hover = { seriesIndex: closest.seriesIndex, pointIndex: closest.pointIndex };
+      const point = chart.series[closest.seriesIndex].points[closest.pointIndex];
+      const adjective = statusLabelForValue(point.daily).toLowerCase();
+      chart.tooltip.textContent = `${chart.series[closest.seriesIndex].name} performed ${articleFor(adjective)} ${adjective} ${point.daily} pushups`;
+      chart.tooltip.className = `calendar-popup ${point.daily >= goal ? 'good' : 'bad'}`;
+      chart.tooltip.style.left = `${padding.left + closest.px + 12}px`;
+      chart.tooltip.style.top = `${padding.top + closest.py - 12}px`;
+      chart.canvas.parentElement?.appendChild(chart.tooltip);
+      drawAll(animation.progress);
+    };
+
+    chart.canvas.addEventListener('mousemove', handleHover);
+    chart.canvas.addEventListener('mouseleave', () => {
+      chart.hover = null;
+      if (chart.tooltip.parentElement) chart.tooltip.remove();
+      drawAll(animation.progress);
+    });
+  };
+
+  charts.forEach(chart => {
+    attachLegend(chart);
+    attachHover(chart);
   });
   animation.start = null;
   animation.progress = 0;
@@ -939,4 +1007,4 @@ loadData().catch(() => {
 });
 
 updateDeadlineClock();
-setInterval(updateDeadlineClock, 1000);
+setInterval(updateDeadlineClock, 50);
