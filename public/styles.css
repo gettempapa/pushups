@@ -113,6 +113,16 @@ body::before {
   text-shadow: 0 0 12px rgba(255, 241, 166, 0.8);
 }
 
+.latest-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.latest-detail {
+  margin-top: 6px;
+}
+
 .hero {
   display: flex;
   flex-wrap: wrap;
@@ -841,8 +851,12 @@ canvas {
 
 canvas {
   width: 100%;
-  height: 340px;
+  height: 380px;
   display: block;
+}
+
+.card.combined canvas {
+  height: 440px;
 }
 
 .footer {
@@ -1261,7 +1275,11 @@ canvas {
   }
 
   canvas {
-    height: 240px;
+    height: 260px;
+  }
+
+  .card.combined canvas {
+    height: 360px;
   }
 
   .log-fab {

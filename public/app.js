@@ -348,7 +348,7 @@ const buildCombinedCard = (metricSeries, metric, options = {}) => {
 };
 
 const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, hoverSeries, width, height, yTicks, yMaxOverride) => {
-  const padding = { top: 26, right: 40, bottom: 50, left: 60 };
+  const padding = { top: 28, right: 24, bottom: 64, left: 72 };
   if (!seriesList.length) return;
 
   const dateCount = seriesList[0].points.length;
@@ -423,13 +423,13 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
       if (index > maxIndex) return;
       const x = dateCount > 1 ? (width / totalSegments) * index : width / 2;
       const y = height - (point.close / maxValue) * height;
-      const radius = highlighted ? 7 : dimmed ? 4 : 6;
+      const radius = highlighted ? 8 : dimmed ? 5 : 7;
       ctx.save();
       ctx.shadowBlur = dimmed ? 0 : 10;
       ctx.shadowColor = dimmed ? 'transparent' : lineColor;
       ctx.fillStyle = dimmed ? 'rgba(148, 163, 184, 0.9)' : lineColor;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
@@ -439,10 +439,10 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     ctx.globalAlpha = 1;
   });
 
-  ctx.fillStyle = 'rgba(76, 255, 243, 0.6)';
-  ctx.font = '20px JetBrains Mono, ui-monospace, monospace';
-  ctx.fillText('0', 0, height + 20);
-  ctx.fillText(`${Math.round(maxValue)}`, 0, 12);
+  ctx.fillStyle = 'rgba(76, 255, 243, 0.7)';
+  ctx.font = '18px JetBrains Mono, ui-monospace, monospace';
+  ctx.fillText('0', 0, height + 28);
+  ctx.fillText(`${Math.round(maxValue)}`, 0, 16);
   if (Array.isArray(yTicks) && yTicks.length) {
     yTicks.forEach(tick => {
       const y = height - (tick / maxValue) * height;
@@ -462,8 +462,8 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     if (labelX + labelWidth > width) labelX = width - labelWidth;
     const left = labelX;
     const right = labelX + labelWidth;
-    if (!isEdge && left <= lastLabelRight + 12) continue;
-    ctx.fillText(label, labelX, height + 26);
+    if (!isEdge && left <= lastLabelRight + 16) continue;
+    ctx.fillText(label, labelX, height + 34);
     lastLabelRight = right;
   }
 
@@ -838,7 +838,7 @@ const renderLatestUpdate = (metricSeries, dates) => {
     return;
   }
 
-  latestUpdate.innerHTML = `<span class="bang">❗</span>Most recent update (${latestDate} · ${timestamp}): <strong>${topName}</strong> just logged <strong>${topValue}</strong> pushups.`;
+  latestUpdate.innerHTML = `<div class="latest-title"><span class="bang">❗</span>Most recent update (${latestDate} · ${timestamp}):</div><div class="latest-detail"><strong>${topName}</strong> just logged <strong>${topValue}</strong> pushups.</div>`;
 };
 const setupDateFilter = dates => {
   isoIndexMap = new Map();
@@ -941,11 +941,11 @@ const renderBoard = metric => {
   };
 
   const attachHover = chart => {
-    const handleHover = event => {
+    const handleHover = (event, forceShow) => {
       const rect = chart.canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      const padding = { top: 26, right: 40, bottom: 50, left: 60 };
+      const padding = { top: 28, right: 24, bottom: 64, left: 72 };
       const width = rect.width - padding.left - padding.right;
       const height = rect.height - padding.top - padding.bottom;
       if (x < padding.left || x > padding.left + width || y < padding.top || y > padding.top + height) {
@@ -982,7 +982,8 @@ const renderBoard = metric => {
         });
       });
 
-      if (!closest || closestDistance > 12) {
+      const threshold = forceShow ? 18 : 14;
+      if (!closest || closestDistance > threshold) {
         chart.hover = null;
         if (chart.tooltip.parentElement) chart.tooltip.remove();
         drawAll(animation.progress);
@@ -1004,7 +1005,8 @@ const renderBoard = metric => {
       drawAll(animation.progress);
     };
 
-    chart.canvas.addEventListener('mousemove', handleHover);
+    chart.canvas.addEventListener('mousemove', event => handleHover(event, false));
+    chart.canvas.addEventListener('click', event => handleHover(event, true));
     chart.canvas.addEventListener('mouseleave', () => {
       chart.hover = null;
       if (chart.tooltip.parentElement) chart.tooltip.remove();
