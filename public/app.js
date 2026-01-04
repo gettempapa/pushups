@@ -1302,6 +1302,19 @@ const updateMascotDock = () => {
     mascot.classList.add('docked');
   } else {
     mascot.classList.remove('docked');
+    const heading = document.querySelector('h1');
+    if (!heading) return;
+    const heroRect = heading.getBoundingClientRect();
+    const mascotRect = mascot.getBoundingClientRect();
+    if (!mascotRect.width || !mascotRect.height) return;
+    const handOffset = 14;
+    const left = Math.min(
+      Math.max(8, heroRect.left + heroRect.width / 2 - mascotRect.width / 2),
+      window.innerWidth - mascotRect.width - 8
+    );
+    const top = heroRect.top - mascotRect.height + handOffset;
+    mascot.style.setProperty('--hero-left', `${left}px`);
+    mascot.style.setProperty('--hero-top', `${top}px`);
   }
 };
 

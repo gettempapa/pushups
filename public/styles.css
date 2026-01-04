@@ -1076,8 +1076,8 @@ canvas {
 
 .pushup-guy {
   position: fixed;
-  top: 0;
-  right: 0;
+  top: var(--hero-top, 0px);
+  left: var(--hero-left, 0px);
   width: min(100vw, 900px);
   max-width: 100vw;
   height: auto;
