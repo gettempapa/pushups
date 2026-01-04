@@ -88,6 +88,7 @@ export default async function handler(req, res) {
     let series = [];
     let seriesByMetric = {};
     let metrics = [];
+    let latestEntry = null;
 
     if (dateIndex !== -1 && nameIndex !== -1 && pushupsIndex !== -1) {
       const dateOrder = [];
@@ -158,6 +159,28 @@ export default async function handler(req, res) {
         })
       );
       series = seriesByMetric.pushups || [];
+
+      for (let i = rows.length - 1; i >= 0; i -= 1) {
+        const row = rows[i];
+        const date = row[dateIndex];
+        const name = row[nameIndex];
+        const rawValue = row[pushupsIndex];
+        if (!date || !name) continue;
+        const value = Number(rawValue);
+        const safeValue = rawValue === undefined || rawValue === '' || rawValue === null
+          ? 0
+          : Number.isFinite(value)
+            ? value
+            : 0;
+        if (safeValue <= 0) continue;
+        const parsedDate = parseDateString(String(date).trim());
+        latestEntry = {
+          date: parsedDate ? toISODate(parsedDate) : String(date).trim(),
+          name: String(name).trim(),
+          value: safeValue
+        };
+        break;
+      }
     } else {
       const people = headers.slice(1).filter(Boolean);
       const wideRows = rows.filter(row => row[0]);
@@ -178,9 +201,28 @@ export default async function handler(req, res) {
       });
       metrics = ['pushups'];
       seriesByMetric = { pushups: series };
+
+      for (let i = wideRows.length - 1; i >= 0; i -= 1) {
+        const row = wideRows[i];
+        const date = row[0];
+        if (!date) continue;
+        for (let j = row.length - 1; j >= 1; j -= 1) {
+          const raw = row[j];
+          const value = Number(raw);
+          if (!Number.isFinite(value) || value <= 0) continue;
+          const parsedDate = parseDateString(String(date).trim());
+          latestEntry = {
+            date: parsedDate ? toISODate(parsedDate) : String(date).trim(),
+            name: people[j - 1],
+            value
+          };
+          break;
+        }
+        if (latestEntry) break;
+      }
     }
 
-    res.json({ series, seriesByMetric, metrics, dates, goal: 100 });
+    res.json({ series, seriesByMetric, metrics, dates, goal: 100, latestEntry });
   } catch (error) {
     console.error('Failed to load sheet data', error);
     res.status(500).json({ error: 'Failed to load sheet data' });

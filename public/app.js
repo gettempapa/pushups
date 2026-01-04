@@ -36,6 +36,8 @@ let dailyCache = { metric: null, series: [], dates: [] };
 let canonicalDates = [];
 let baseMonth = null;
 let satisMonthState = new Map();
+let activeLockedChart = null;
+let documentClickBound = false;
 
 const goal = 100;
 const palette = [
@@ -51,7 +53,7 @@ const palette = [
   '#f47bff'
 ];
 
-const chartPadding = { top: 32, right: 28, bottom: 72, left: 84 };
+const chartPadding = { top: 32, right: 18, bottom: 72, left: 56 };
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -546,6 +548,11 @@ const animate = timestamp => {
 
 const renderMetricButtons = metrics => {
   metricToggle.innerHTML = '';
+  if (metrics.length <= 1) {
+    metricToggle.style.display = 'none';
+    return;
+  }
+  metricToggle.style.display = 'flex';
   metrics.forEach(metric => {
     const button = document.createElement('button');
     button.className = 'metric-btn';
@@ -878,6 +885,14 @@ const renderLatestUpdate = (metricSeries, dates) => {
     return;
   }
 
+  const latestEntry = payloadCache?.latestEntry;
+  if (latestEntry && latestEntry.value > 0) {
+    const timestamp = formatPstTimestamp();
+    const dateLabel = latestEntry.date || dates[dates.length - 1];
+    latestUpdate.innerHTML = `<div class="latest-title"><span class="bang">❗</span>Most recent update (${dateLabel} · ${timestamp}):</div><div class="latest-detail"><strong>${latestEntry.name}</strong> just logged <strong>${latestEntry.value}</strong> pushups.</div>`;
+    return;
+  }
+
   const latestDate = dates[dates.length - 1];
   let topName = null;
   let topValue = -Infinity;
@@ -1044,11 +1059,20 @@ const renderBoard = metric => {
       const threshold = forceShow ? 18 : 14;
       if (!closest || closestDistance > threshold) {
         chart.hover = null;
-        if (chart.tooltip.parentElement) chart.tooltip.remove();
-        drawAll(animation.progress);
+        if (forceShow) {
+          chart.locked = null;
+          if (activeLockedChart === chart) activeLockedChart = null;
+          if (chart.tooltip.parentElement) chart.tooltip.remove();
+          drawAll(animation.progress);
+        }
         return;
       }
 
+      if (forceShow) {
+        chart.locked = { seriesIndex: closest.seriesIndex, pointIndex: closest.pointIndex };
+        activeLockedChart = chart;
+      }
+      if (chart.locked && !forceShow) return;
       chart.hover = { seriesIndex: closest.seriesIndex, pointIndex: closest.pointIndex };
       const point = chart.series[closest.seriesIndex].points[closest.pointIndex];
       const adjective = statusLabelForValue(point.daily).toLowerCase();
@@ -1064,19 +1088,37 @@ const renderBoard = metric => {
       drawAll(animation.progress);
     };
 
+    const handleClick = event => handleHover(event, true);
     chart.canvas.addEventListener('mousemove', event => handleHover(event, false));
-    chart.canvas.addEventListener('click', event => handleHover(event, true));
+    chart.canvas.addEventListener('click', handleClick);
     chart.canvas.addEventListener('mouseleave', () => {
-      chart.hover = null;
-      if (chart.tooltip.parentElement) chart.tooltip.remove();
-      drawAll(animation.progress);
+      if (!chart.locked) {
+        chart.hover = null;
+        if (chart.tooltip.parentElement) chart.tooltip.remove();
+        drawAll(animation.progress);
+      }
     });
   };
 
   charts.forEach(chart => {
+    chart.locked = null;
     attachLegend(chart);
     attachHover(chart);
   });
+  if (!documentClickBound) {
+    document.addEventListener('click', event => {
+      const chart = activeLockedChart;
+      if (!chart) return;
+      if (event.target === chart.canvas) return;
+      if (chart.tooltip.contains(event.target)) return;
+      chart.locked = null;
+      chart.hover = null;
+      activeLockedChart = null;
+      if (chart.tooltip.parentElement) chart.tooltip.remove();
+      drawAll(animation.progress);
+    });
+    documentClickBound = true;
+  }
   animation.start = null;
   animation.progress = 0;
   animation.running = true;
@@ -1200,7 +1242,9 @@ const loadData = async () => {
   }
   const payload = await res.json();
   payloadCache = payload;
-  const metrics = payload.metrics?.length ? payload.metrics : ['pushups'];
+  let metrics = payload.metrics?.length ? payload.metrics : ['pushups'];
+  metrics = metrics.filter(metric => metric === 'pushups');
+  if (!metrics.length) metrics = ['pushups'];
   if (!metrics.includes(currentMetric)) currentMetric = metrics[0];
   if (payload.dates?.length) {
     setupDateFilter(payload.dates);
