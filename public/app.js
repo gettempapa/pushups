@@ -113,9 +113,10 @@ const updateDeadlineClock = () => {
   deadlineClock.textContent = `${hours}:${minutes}:${seconds}.${millis}`;
 };
 
-const getPstIsoDate = () => {
-  const { year, month, day } = getPstParts();
-  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+const getLocalIsoDate = () => {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
 };
 
 const toISODate = date => date.toISOString().slice(0, 10);
@@ -827,7 +828,7 @@ const renderSatisBars = metricSeries => {
   if (!metricSeries.length) return;
 
   const earliestIso = canonicalDates[0];
-  const todayIso = getPstIsoDate();
+  const todayIso = getLocalIsoDate();
   const maxMonth = monthStart(new Date(`${todayIso}T00:00:00Z`));
   const minMonth = addMonths(maxMonth, -5);
   const lastPossibleStart = addMonths(maxMonth, -1);
@@ -1218,12 +1219,16 @@ const setupDateFilter = dates => {
   const lastParsed = parsedDates[parsedDates.length - 1].parsed;
   baseMonth = new Date(Date.UTC(lastParsed.getUTCFullYear(), lastParsed.getUTCMonth(), 1));
 
+  const todayIso = getLocalIsoDate();
+  const lastIso = canonicalDates[canonicalDates.length - 1];
+  const maxIso = todayIso > lastIso ? todayIso : lastIso;
+
   dayFilter.min = canonicalDates[0];
-  dayFilter.max = canonicalDates[canonicalDates.length - 1];
-  dayFilter.value = dayFilter.value || canonicalDates[canonicalDates.length - 1];
+  dayFilter.max = maxIso;
+  dayFilter.value = todayIso >= canonicalDates[0] && todayIso <= maxIso ? todayIso : lastIso;
   const initialIndex = isoIndexMap.get(dayFilter.value);
-  currentDayIndex = initialIndex ?? (canonicalDates.length - 1);
-  currentDay = canonicalDates[currentDayIndex] || canonicalDates[canonicalDates.length - 1];
+  currentDayIndex = initialIndex ?? null;
+  currentDay = currentDayIndex === null ? dayFilter.value : canonicalDates[currentDayIndex];
 };
 
 const normalizeSeries = (metricSeries, dates) =>
@@ -1510,7 +1515,7 @@ const openLogModal = () => {
   if (!logModal) return;
   logModal.classList.add('open');
   logModal.setAttribute('aria-hidden', 'false');
-  if (logDate) logDate.value = getPstIsoDate();
+  if (logDate) logDate.value = getLocalIsoDate();
   if (logCount) logCount.value = '';
   if (logStatus) logStatus.textContent = '';
   if (logExisting) {
