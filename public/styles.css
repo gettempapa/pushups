@@ -833,7 +833,7 @@ canvas {
 .chart-wrap {
   position: relative;
   border-radius: 14px;
-  padding: 10px;
+  padding: 6px;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(9, 14, 24, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.2);
   box-shadow: inset 0 0 20px rgba(15, 23, 42, 0.35);
@@ -1076,16 +1076,68 @@ canvas {
 
 .pushup-guy {
   position: fixed;
+  top: 18px;
   right: 18px;
-  bottom: 18px;
-  width: min(40vw, 320px);
-  max-width: 40vw;
+  width: min(90vw, 720px);
+  max-width: 90vw;
   height: auto;
   z-index: 70;
   pointer-events: none;
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35));
+  transition: width 0.45s ease, transform 0.45s ease, top 0.45s ease, right 0.45s ease, left 0.45s ease;
 }
 
+.pushup-guy.docked {
+  width: 140px;
+  max-width: 140px;
+  right: auto;
+  left: var(--dock-left, 16px);
+  top: var(--dock-top, 16px);
+}
+
+.chart-tabs {
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.chart-tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chart-tab {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--neon);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-tab.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #d7f7ff;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.3);
+}
+
+.chart-tabs-panels {
+  display: grid;
+}
+
+.chart-panel {
+  display: none;
+}
+
+.chart-panel.active {
+  display: block;
+}
 @keyframes scan {
   0% {
     transform: translateY(-20%);
@@ -1360,6 +1412,12 @@ canvas {
   }
 
   .pushup-guy {
-    width: min(60vw, 240px);
+    width: min(92vw, 420px);
+    max-width: 92vw;
+  }
+
+  .pushup-guy.docked {
+    width: 110px;
+    max-width: 110px;
   }
 }

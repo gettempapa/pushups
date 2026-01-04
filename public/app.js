@@ -18,6 +18,7 @@ const logStatus = document.getElementById('log-status');
 const logClose = document.getElementById('log-close');
 const logExisting = document.getElementById('log-existing');
 const logExistingText = document.getElementById('log-existing-text');
+const mascot = document.querySelector('.pushup-guy');
 
 const animation = {
   start: null,
@@ -53,7 +54,7 @@ const palette = [
   '#f47bff'
 ];
 
-const chartPadding = { top: 28, right: 12, bottom: 60, left: 24 };
+const chartPadding = { top: 28, right: 8, bottom: 58, left: 18 };
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -357,9 +358,9 @@ const buildCombinedCard = (metricSeries, metric, options = {}) => {
   chartLayout.appendChild(chartWrap);
 
   card.appendChild(chartLayout);
-  board.appendChild(card);
 
   return {
+    card,
     canvas,
     tooltip,
     series: metricSeries,
@@ -449,6 +450,7 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     ctx.globalAlpha = dimmed ? 0.6 : 1;
 
     series.points.forEach((point, index) => {
+      if (point.date === 'Start') return;
       if (index > maxIndex) return;
       const x = dateCount > 1 ? (drawWidth / totalSegments) * index : drawWidth / 2;
       const y = drawHeight - (point.close / maxValue) * drawHeight;
@@ -508,7 +510,7 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     const series = seriesList[seriesIndex];
     if (series) {
       const point = series.points[pointIndex];
-      if (point) {
+      if (point && point.date !== 'Start') {
         const x = dateCount > 1 ? (drawWidth / totalSegments) * pointIndex : drawWidth / 2;
         const y = drawHeight - (point.close / maxValue) * drawHeight;
         ctx.fillStyle = '#ffffff';
@@ -538,6 +540,7 @@ const drawAll = progress => {
   charts.forEach(chart => {
     const ctx = chart.canvas.getContext('2d');
     const { rect, dpr } = resizeCanvas(chart.canvas);
+    if (!rect.width || !rect.height) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, chart.canvas.width, chart.canvas.height);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -699,14 +702,16 @@ const renderSatisBars = metricSeries => {
   const defaultStart = addMonths(maxMonth, -1);
   const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  const rows = metricSeries.map(series => {
-    const good = series.points.filter(point => point.value >= goal).length;
-    const bad = series.points.filter(point => point.value <= 0).length;
-    const total = series.points.length;
-    const ratio = total ? Math.round((good / total) * 100) : 0;
-    const label = ratio >= 50 ? 'MOSTLY SATISFACTORY' : 'MOSTLY PATHETIC';
-    return { name: series.name, good, bad, ratio, label, points: series.points };
-  });
+  const rows = [...metricSeries]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(series => {
+      const good = series.points.filter(point => point.value >= goal).length;
+      const bad = series.points.filter(point => point.value <= 0).length;
+      const total = series.points.length;
+      const ratio = total ? Math.round((good / total) * 100) : 0;
+      const label = ratio >= 50 ? 'MOSTLY SATISFACTORY' : 'MOSTLY PATHETIC';
+      return { name: series.name, good, bad, ratio, label, points: series.points };
+    });
 
   rows.forEach(row => {
     const wrapper = document.createElement('div');
@@ -889,7 +894,8 @@ const renderAverages = metricSeries => {
   averageRows.innerHTML = '';
   if (!metricSeries.length) return;
 
-  metricSeries.forEach(series => {
+  const sorted = [...metricSeries].sort((a, b) => a.name.localeCompare(b.name));
+  sorted.forEach(series => {
     const last30 = series.points.slice(-30);
     const total = last30.reduce((sum, point) => sum + (Number(point.value) || 0), 0);
     const avg = last30.length ? Math.round(total / last30.length) : 0;
@@ -1002,11 +1008,12 @@ const renderBoard = metric => {
   const metricSeries = payloadCache.seriesByMetric?.[metric] || payloadCache.series || [];
   const dates = canonicalDates.length ? canonicalDates : payloadCache.dates || [];
   const normalizedSeries = dates.length ? normalizeSeries(metricSeries, dates) : metricSeries;
+  const alphaSeries = [...normalizedSeries].sort((a, b) => a.name.localeCompare(b.name));
   dailyCache = { metric, series: normalizedSeries, dates };
   renderTodayBars(normalizedSeries, metric, currentDay || dates[dates.length - 1], dates);
-  const cumulativeSeries = buildCumulativeSeries(normalizedSeries);
-  const dailySeries = buildDailySeries(normalizedSeries);
-  const rollingSeries = buildRollingSeries(normalizedSeries);
+  const cumulativeSeries = buildCumulativeSeries(alphaSeries);
+  const dailySeries = buildDailySeries(alphaSeries);
+  const rollingSeries = buildRollingSeries(alphaSeries);
   const maxDaily = Math.max(100, ...dailySeries.flatMap(series => series.points.map(point => point.daily)));
   const maxRolling = Math.max(100, ...rollingSeries.flatMap(series => series.points.map(point => point.daily)));
   const cumulativeChart = buildCombinedCard(cumulativeSeries, metric, {
@@ -1028,12 +1035,50 @@ const renderBoard = metric => {
     showTotals: false
   });
   charts = [cumulativeChart, dailyChart, rollingChart];
-  renderSatisBars(normalizedSeries);
+  renderSatisBars(alphaSeries);
   renderVictories(normalizedSeries, dates);
-  renderAverages(normalizedSeries);
+  renderAverages(alphaSeries);
   renderLatestUpdate(normalizedSeries, dates);
-  renderSatisBars(normalizedSeries);
-  renderVictories(normalizedSeries, dates);
+
+  const tabs = document.createElement('section');
+  tabs.className = 'chart-tabs';
+  const tabBar = document.createElement('div');
+  tabBar.className = 'chart-tabs-bar';
+  const panels = document.createElement('div');
+  panels.className = 'chart-tabs-panels';
+
+  const tabDefs = [
+    { id: 'ytd', label: 'YTD CUMULATIVE', chart: cumulativeChart },
+    { id: 'daily', label: 'DAILY VOLUME', chart: dailyChart },
+    { id: 'trends', label: 'TRENDS', chart: rollingChart }
+  ];
+
+  tabDefs.forEach((tab, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `chart-tab ${index === 0 ? 'active' : ''}`;
+    button.textContent = tab.label;
+    button.dataset.tab = tab.id;
+    button.addEventListener('click', () => {
+      tabBar.querySelectorAll('.chart-tab').forEach(el => {
+        el.classList.toggle('active', el.dataset.tab === tab.id);
+      });
+      panels.querySelectorAll('.chart-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.tab === tab.id);
+      });
+      setTimeout(() => drawAll(animation.progress), 0);
+    });
+    tabBar.appendChild(button);
+
+    tab.chart.card.classList.add('chart-panel');
+    tab.chart.card.dataset.tab = tab.id;
+    if (index === 0) tab.chart.card.classList.add('active');
+    panels.appendChild(tab.chart.card);
+  });
+
+  tabs.appendChild(tabBar);
+  tabs.appendChild(panels);
+  board.appendChild(tabs);
 
   const attachLegend = chart => {
     chart.legendItems.forEach((item, index) => {
@@ -1080,10 +1125,11 @@ const renderBoard = metric => {
       let closest = null;
       let closestDistance = Infinity;
 
-      chart.series.forEach((series, seriesIndex) => {
-        series.points.forEach((point, pointIndex) => {
-          const px = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
-          const py = height - (point.close / maxValue) * height;
+    chart.series.forEach((series, seriesIndex) => {
+      series.points.forEach((point, pointIndex) => {
+        if (point.date === 'Start') return;
+        const px = dateCount > 1 ? (width / totalSegments) * pointIndex : width / 2;
+        const py = height - (point.close / maxValue) * height;
           const dx = px - hoverX;
           const dy = py - hoverY;
           const distance = Math.hypot(dx, dy);
@@ -1243,6 +1289,25 @@ if (logName) {
   });
 }
 
+const updateMascotDock = () => {
+  if (!mascot || !logFab) return;
+  const docked = window.scrollY > 120;
+  if (docked) {
+    const rect = logFab.getBoundingClientRect();
+    const targetWidth = 140;
+    const left = Math.max(12, rect.right - targetWidth);
+    const top = Math.max(12, rect.top - targetWidth - 8);
+    mascot.style.setProperty('--dock-left', `${left}px`);
+    mascot.style.setProperty('--dock-top', `${top}px`);
+    mascot.classList.add('docked');
+  } else {
+    mascot.classList.remove('docked');
+  }
+};
+
+window.addEventListener('scroll', updateMascotDock, { passive: true });
+window.addEventListener('resize', updateMascotDock);
+
 if (logForm) {
   logForm.addEventListener('submit', async event => {
     event.preventDefault();
@@ -1328,3 +1393,4 @@ loadData().catch(() => {
 
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
+updateMascotDock();
