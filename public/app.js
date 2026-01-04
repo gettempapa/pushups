@@ -35,6 +35,7 @@ let isoIndexMap = new Map();
 let dailyCache = { metric: null, series: [], dates: [] };
 let canonicalDates = [];
 let baseMonth = null;
+let satisMonthState = new Map();
 
 const goal = 100;
 const palette = [
@@ -211,6 +212,8 @@ const monthLabel = date =>
 
 const addMonths = (date, delta) =>
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + delta, 1));
+
+const monthStart = date => new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 
 const buildCanonicalDates = dates => {
   const parsed = dates
@@ -642,7 +645,18 @@ const renderSatisBars = metricSeries => {
   satisBars.innerHTML = '';
   if (!metricSeries.length) return;
 
-  const months = baseMonth ? [addMonths(baseMonth, -1), baseMonth] : [];
+  const earliestIso = canonicalDates[0];
+  const todayIso = getPstIsoDate();
+  const minMonth = earliestIso ? monthStart(new Date(`${earliestIso}T00:00:00Z`)) : null;
+  const maxMonth = monthStart(new Date(`${todayIso}T00:00:00Z`));
+  const lastPossibleStart = minMonth && maxMonth > minMonth ? addMonths(maxMonth, -1) : maxMonth;
+  const clampStart = start => {
+    let next = start;
+    if (minMonth && next < minMonth) next = minMonth;
+    if (lastPossibleStart && next > lastPossibleStart) next = lastPossibleStart;
+    return next;
+  };
+  const defaultStart = baseMonth ? addMonths(baseMonth, -1) : maxMonth;
   const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   const rows = metricSeries.map(series => {
@@ -673,8 +687,48 @@ const renderSatisBars = metricSeries => {
     calendars.className = 'satis-calendars';
     let popup = null;
     const byDate = new Map(row.points.map(point => [point.date, point.value]));
-    const earliest = canonicalDates[0];
-    const todayIso = getPstIsoDate();
+    const startMonth = clampStart(satisMonthState.get(row.name) || defaultStart);
+    satisMonthState.set(row.name, startMonth);
+
+    const nav = document.createElement('div');
+    nav.className = 'satis-nav';
+    const navLabel = document.createElement('div');
+    navLabel.className = 'satis-nav-label';
+    const navMonths = [];
+    if (startMonth) navMonths.push(monthLabel(startMonth));
+    if (startMonth && maxMonth > startMonth) navMonths.push(monthLabel(addMonths(startMonth, 1)));
+    navLabel.textContent = navMonths.join(' · ');
+    const navButtons = document.createElement('div');
+    navButtons.className = 'satis-nav-buttons';
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'satis-nav-btn';
+    prevBtn.textContent = '←';
+    prevBtn.disabled = !!(minMonth && startMonth <= minMonth);
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'satis-nav-btn';
+    nextBtn.textContent = '→';
+    nextBtn.disabled = !!(lastPossibleStart && startMonth >= lastPossibleStart);
+    prevBtn.addEventListener('click', () => {
+      if (prevBtn.disabled) return;
+      satisMonthState.set(row.name, clampStart(addMonths(startMonth, -1)));
+      renderSatisBars(metricSeries);
+    });
+    nextBtn.addEventListener('click', () => {
+      if (nextBtn.disabled) return;
+      satisMonthState.set(row.name, clampStart(addMonths(startMonth, 1)));
+      renderSatisBars(metricSeries);
+    });
+    navButtons.appendChild(prevBtn);
+    navButtons.appendChild(nextBtn);
+    nav.appendChild(navLabel);
+    nav.appendChild(navButtons);
+    calendars.appendChild(nav);
+
+    const months = [];
+    if (startMonth) months.push(startMonth);
+    if (startMonth && maxMonth > startMonth) months.push(addMonths(startMonth, 1));
 
     months.forEach(monthDate => {
       const month = document.createElement('div');
@@ -710,7 +764,7 @@ const renderSatisBars = metricSeries => {
         const value = byDate.get(iso) ?? 0;
         const cell = document.createElement('div');
         cell.className = 'satis-cell';
-        if ((earliest && iso < earliest) || iso > todayIso) {
+        if ((earliestIso && iso < earliestIso) || iso > todayIso) {
           cell.classList.add('empty');
         } else {
           if (value >= goal) cell.classList.add('good');
@@ -907,11 +961,11 @@ const renderBoard = metric => {
   const maxDaily = Math.max(100, ...dailySeries.flatMap(series => series.points.map(point => point.daily)));
   const cumulativeChart = buildCombinedCard(cumulativeSeries, metric, {
     title: `YTD CUMULATIVE · ${metric}`,
-    note: 'Cumulative YTD · hover for details'
+    note: 'Cumulative YTD · click or tap for details'
   });
   const dailyChart = buildCombinedCard(dailySeries, metric, {
     title: `DAILY VOLUME · ${metric}`,
-    note: 'Daily totals · hover for details',
+    note: 'Daily totals · click or tap for details',
     yTicks: [25, 50, 75, 100],
     yMax: maxDaily
   });
