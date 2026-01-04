@@ -275,6 +275,23 @@ const buildDailySeries = metricSeries =>
     }))
   }));
 
+const buildRollingSeries = (metricSeries, windowSize = 30) =>
+  metricSeries.map(series => {
+    const values = series.points.map(point => Number(point.value) || 0);
+    const points = series.points.map((point, index) => {
+      const start = Math.max(0, index - windowSize + 1);
+      const slice = values.slice(start, index + 1);
+      const avg = slice.length ? Math.round(slice.reduce((sum, v) => sum + v, 0) / slice.length) : 0;
+      return {
+        date: point.date,
+        daily: avg,
+        open: avg,
+        close: avg
+      };
+    });
+    return { name: series.name, points };
+  });
+
 const buildCombinedCard = (metricSeries, metric, options = {}) => {
   const card = document.createElement('article');
   card.className = 'card flash combined';
@@ -980,7 +997,9 @@ const renderBoard = metric => {
   renderTodayBars(normalizedSeries, metric, currentDay || dates[dates.length - 1], dates);
   const cumulativeSeries = buildCumulativeSeries(normalizedSeries);
   const dailySeries = buildDailySeries(normalizedSeries);
+  const rollingSeries = buildRollingSeries(normalizedSeries);
   const maxDaily = Math.max(100, ...dailySeries.flatMap(series => series.points.map(point => point.daily)));
+  const maxRolling = Math.max(100, ...rollingSeries.flatMap(series => series.points.map(point => point.daily)));
   const cumulativeChart = buildCombinedCard(cumulativeSeries, metric, {
     title: `YTD CUMULATIVE · ${metric}`,
     note: 'Cumulative YTD · click or tap for details'
@@ -992,7 +1011,14 @@ const renderBoard = metric => {
     yMax: maxDaily,
     showTotals: false
   });
-  charts = [cumulativeChart, dailyChart];
+  const rollingChart = buildCombinedCard(rollingSeries, metric, {
+    title: `TRENDS · ${metric}`,
+    note: 'Rolling 30-day average · click or tap for details',
+    yTicks: [25, 50, 75, 100],
+    yMax: maxRolling,
+    showTotals: false
+  });
+  charts = [cumulativeChart, dailyChart, rollingChart];
   renderSatisBars(normalizedSeries);
   renderVictories(normalizedSeries, dates);
   renderAverages(normalizedSeries);

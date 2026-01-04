@@ -920,7 +920,7 @@ canvas {
 
 .log-fab {
   position: fixed;
-  right: 24px;
+  right: 180px;
   bottom: 24px;
   z-index: 50;
   padding: 12px 20px;
