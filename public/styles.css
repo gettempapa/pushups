@@ -48,7 +48,7 @@ body::before {
 }
 
 .page {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 40px 24px 60px;
 }
@@ -270,6 +270,11 @@ h1 {
   grid-template-columns: 180px 1fr;
   gap: 14px;
   align-items: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(12, 18, 30, 0.7);
+  box-shadow: inset 0 0 18px rgba(15, 23, 42, 0.35);
 }
 
 .satis-name {
@@ -289,6 +294,11 @@ h1 {
   color: var(--muted);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.satis-ratio {
+  display: block;
+  margin-top: 6px;
 }
 
 .satis-indicator strong {
@@ -618,6 +628,10 @@ canvas {
   overflow: hidden;
 }
 
+.card.combined {
+  padding: 20px 24px;
+}
+
 .card::after {
   content: '';
   position: absolute;
@@ -648,6 +662,14 @@ canvas {
   grid-template-columns: 180px 1fr;
   gap: 16px;
   align-items: start;
+}
+
+.card.combined .chart-layout {
+  grid-template-columns: 1fr;
+}
+
+.card.combined .chart-legend {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
 .chart-legend {

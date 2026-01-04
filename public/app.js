@@ -664,7 +664,7 @@ const renderSatisBars = metricSeries => {
     const indicator = document.createElement('div');
     indicator.className = `satis-indicator ${row.ratio >= 50 ? 'good' : 'bad'}`;
     const emoji = row.ratio >= 50 ? '👍' : '👎';
-    indicator.innerHTML = `<strong>${emoji} ${row.label}</strong> · ${row.ratio}% days at 100+`;
+    indicator.innerHTML = `<strong>${emoji} ${row.label}</strong><span class="satis-ratio">${row.ratio}% days at 100+</span>`;
     name.appendChild(label);
     name.appendChild(indicator);
 
