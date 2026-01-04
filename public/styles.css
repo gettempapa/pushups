@@ -141,7 +141,7 @@ body::before {
 }
 
 .hero {
-  margin-top: 245px;
+  margin-top: 267px;
 }
 
 .latest-update strong {
@@ -196,7 +196,7 @@ body::before {
 
 h1 {
   margin: 0 0 8px;
-  font-size: clamp(1rem, 4vw, 2rem);
+  font-size: clamp(0.875rem, 3.5vw, 1.75rem);
   font-weight: 700;
   letter-spacing: -0.01em;
   background: linear-gradient(135deg, var(--text) 0%, var(--neon) 100%);
