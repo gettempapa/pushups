@@ -764,13 +764,33 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     bar.className = 'bar';
     const widthPercent = Math.min(100, Math.max(4, (item.value / scaleMax) * 100));
     bar.style.width = `${widthPercent}%`;
-      bar.style.background = colorForValue(item.value);
-      if (item.value > goal) {
-        bar.classList.add('flame');
-        const intensity = Math.min(3, Math.max(1, (item.value - goal) / 30));
-        wrapper.style.setProperty('--shake', intensity.toFixed(2));
-        bar.style.setProperty('--over', Math.min(1, (item.value - goal) / 50).toFixed(2));
+    bar.style.background = colorForValue(item.value);
+    if (item.value > goal) {
+      bar.classList.add('flame');
+      const intensity = Math.min(3, Math.max(1, (item.value - goal) / 30));
+      wrapper.style.setProperty('--shake', intensity.toFixed(2));
+      bar.style.setProperty('--over', Math.min(1, (item.value - goal) / 50).toFixed(2));
+
+      // Add flame particles
+      const flameContainer = document.createElement('div');
+      flameContainer.className = 'flame-container';
+      for (let i = 0; i < 5; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'flame-particle';
+        flameContainer.appendChild(particle);
       }
+      bar.appendChild(flameContainer);
+
+      // Add glow effect
+      const glow = document.createElement('div');
+      glow.className = 'flame-glow';
+      bar.appendChild(glow);
+
+      // Add heat wave
+      const heatWave = document.createElement('div');
+      heatWave.className = 'heat-wave';
+      bar.appendChild(heatWave);
+    }
 
     const value = document.createElement('div');
     value.className = 'value';
@@ -806,8 +826,6 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
   });
 };
 
-let satisDetailsVisible = false;
-
 const renderSatisBars = metricSeries => {
   satisBars.innerHTML = '';
   if (!metricSeries.length) return;
@@ -837,11 +855,24 @@ const renderSatisBars = metricSeries => {
       return { name: series.name, good, bad, ratio, label, points: series.points };
     });
 
-  // Summary view
+  // Build mini calendar data (last 30 days)
+  const buildMiniCalendar = (points) => {
+    const byDate = new Map(points.map(p => [p.date, p.value]));
+    const last30 = canonicalDates.slice(-30);
+    return last30.map(date => {
+      const value = byDate.get(date) ?? 0;
+      return { date, value, status: value >= goal ? 'good' : value > 0 ? 'bad' : 'empty' };
+    });
+  };
+
+  // Summary view with per-person expand
   const summarySection = document.createElement('div');
   summarySection.className = 'satis-summary';
 
   rows.forEach((row, index) => {
+    const rowContainer = document.createElement('div');
+    rowContainer.className = 'satis-row-container';
+
     const summaryRow = document.createElement('div');
     summaryRow.className = 'satis-summary-row';
     summaryRow.dataset.personIndex = index;
@@ -849,6 +880,16 @@ const renderSatisBars = metricSeries => {
     const nameEl = document.createElement('div');
     nameEl.className = 'name';
     nameEl.textContent = row.name;
+
+    // Mini calendar preview
+    const miniCal = document.createElement('div');
+    miniCal.className = 'mini-calendar';
+    const miniData = buildMiniCalendar(row.points);
+    miniData.forEach(day => {
+      const cell = document.createElement('div');
+      cell.className = `mini-cell ${day.status}`;
+      miniCal.appendChild(cell);
+    });
 
     const statusBadge = document.createElement('div');
     statusBadge.className = `status-badge ${row.ratio >= 50 ? 'good' : 'bad'}`;
@@ -858,12 +899,21 @@ const renderSatisBars = metricSeries => {
     percentEl.className = `percent ${row.ratio >= 50 ? 'good' : 'bad'}`;
     percentEl.textContent = `${row.ratio}%`;
 
+    // Expand button with chevron SVG
+    const expandBtn = document.createElement('button');
+    expandBtn.type = 'button';
+    expandBtn.className = 'satis-expand-btn';
+    expandBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
     summaryRow.appendChild(nameEl);
+    summaryRow.appendChild(miniCal);
     summaryRow.appendChild(statusBadge);
     summaryRow.appendChild(percentEl);
+    summaryRow.appendChild(expandBtn);
 
-    // Click to filter charts to this person
-    summaryRow.addEventListener('click', () => {
+    // Click name to filter charts
+    nameEl.addEventListener('click', (e) => {
+      e.stopPropagation();
       const personName = row.name;
       charts.forEach(chart => {
         const seriesIndex = chart.series.findIndex(s => s.name === personName);
@@ -881,59 +931,57 @@ const renderSatisBars = metricSeries => {
         }
       });
       drawAll(animation.progress);
-      // Scroll to charts
       const chartsSection = document.querySelector('.chart-tabs');
       if (chartsSection) {
         chartsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
 
-    summarySection.appendChild(summaryRow);
+    // Per-person details section
+    const personDetails = document.createElement('div');
+    personDetails.className = 'satis-person-details';
+    personDetails.dataset.person = row.name;
+
+    // Expand button click
+    expandBtn.addEventListener('click', () => {
+      const isExpanded = personDetails.classList.contains('visible');
+      // Close all other expanded sections
+      document.querySelectorAll('.satis-person-details.visible').forEach(el => {
+        el.classList.remove('visible');
+      });
+      document.querySelectorAll('.satis-expand-btn.expanded').forEach(el => {
+        el.classList.remove('expanded');
+      });
+      if (!isExpanded) {
+        expandBtn.classList.add('expanded');
+        personDetails.classList.add('visible');
+        // Build the calendar content if not already built
+        if (!personDetails.dataset.built) {
+          buildPersonCalendar(personDetails, row);
+          personDetails.dataset.built = 'true';
+        }
+      }
+    });
+
+    rowContainer.appendChild(summaryRow);
+    rowContainer.appendChild(personDetails);
+    summarySection.appendChild(rowContainer);
   });
 
   satisBars.appendChild(summarySection);
 
-  // Toggle button and details section
-  const toggleBtn = document.createElement('button');
-  toggleBtn.type = 'button';
-  toggleBtn.className = 'satis-toggle-btn';
-  toggleBtn.textContent = satisDetailsVisible ? 'Hide Calendar Details' : 'Show Calendar Details';
-  toggleBtn.style.marginTop = '16px';
-  satisBars.appendChild(toggleBtn);
-
-  const detailsSection = document.createElement('div');
-  detailsSection.className = `satis-details ${satisDetailsVisible ? 'visible' : ''}`;
-
-  toggleBtn.addEventListener('click', () => {
-    satisDetailsVisible = !satisDetailsVisible;
-    detailsSection.classList.toggle('visible', satisDetailsVisible);
-    toggleBtn.textContent = satisDetailsVisible ? 'Hide Calendar Details' : 'Show Calendar Details';
-  });
-
-  rows.forEach(row => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'satis-row';
-
-    const name = document.createElement('div');
-    name.className = 'satis-name';
-    const label = document.createElement('div');
-    label.textContent = row.name;
-    const indicator = document.createElement('div');
-    indicator.className = `satis-indicator ${row.ratio >= 50 ? 'good' : 'bad'}`;
-    const emoji = row.ratio >= 50 ? '👍' : '👎';
-    indicator.innerHTML = `<strong>${emoji} ${row.label}</strong><span class="satis-ratio">${row.ratio}% days at 100+</span>`;
-    name.appendChild(label);
-    name.appendChild(indicator);
-
-    const calendars = document.createElement('div');
-    calendars.className = 'satis-calendars';
-    const hint = document.createElement('div');
-    hint.className = 'satis-hint';
-    hint.textContent = `${inputHint()} for details`;
-    let popup = null;
+  // Helper to build calendar for a person
+  const buildPersonCalendar = (container, row) => {
     const byDate = new Map(row.points.map(point => [point.date, point.value]));
     const startMonth = clampStart(satisMonthState.get(row.name) || defaultStart);
     satisMonthState.set(row.name, startMonth);
+
+    const calendarsWrap = document.createElement('div');
+    calendarsWrap.className = 'satis-calendars';
+
+    const hint = document.createElement('div');
+    hint.className = 'satis-hint';
+    hint.textContent = `${inputHint()} day for details`;
 
     const nav = document.createElement('div');
     nav.className = 'satis-nav';
@@ -955,22 +1003,29 @@ const renderSatisBars = metricSeries => {
     nextBtn.className = 'satis-nav-btn';
     nextBtn.textContent = '→';
     nextBtn.disabled = !!(lastPossibleStart && startMonth >= lastPossibleStart);
+
+    const rebuildCalendar = () => {
+      container.innerHTML = '';
+      container.dataset.built = '';
+      buildPersonCalendar(container, row);
+    };
+
     prevBtn.addEventListener('click', () => {
       if (prevBtn.disabled) return;
       satisMonthState.set(row.name, clampStart(addMonths(startMonth, -1)));
-      renderSatisBars(metricSeries);
+      rebuildCalendar();
     });
     nextBtn.addEventListener('click', () => {
       if (nextBtn.disabled) return;
       satisMonthState.set(row.name, clampStart(addMonths(startMonth, 1)));
-      renderSatisBars(metricSeries);
+      rebuildCalendar();
     });
     navButtons.appendChild(prevBtn);
     navButtons.appendChild(nextBtn);
     nav.appendChild(navLabel);
     nav.appendChild(navButtons);
-    calendars.appendChild(hint);
-    calendars.appendChild(nav);
+    calendarsWrap.appendChild(hint);
+    calendarsWrap.appendChild(nav);
 
     const months = [];
     if (startMonth) months.push(startMonth);
@@ -979,11 +1034,9 @@ const renderSatisBars = metricSeries => {
     months.forEach(monthDate => {
       const month = document.createElement('div');
       month.className = 'satis-month';
-
       const title = document.createElement('div');
       title.className = 'satis-month-title';
       title.textContent = monthLabel(monthDate);
-
       const weekdayRow = document.createElement('div');
       weekdayRow.className = 'satis-weekdays';
       weekdays.forEach(day => {
@@ -991,21 +1044,17 @@ const renderSatisBars = metricSeries => {
         label.textContent = day;
         weekdayRow.appendChild(label);
       });
-
       const grid = document.createElement('div');
       grid.className = 'satis-grid';
-
       const firstDay = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth(), 1));
       const startOffset = firstDay.getUTCDay();
       const daysInMonth = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + 1, 0)).getUTCDate();
-
-      for (let i = 0; i < startOffset; i += 1) {
+      for (let i = 0; i < startOffset; i++) {
         const empty = document.createElement('div');
         empty.className = 'satis-cell empty';
         grid.appendChild(empty);
       }
-
-      for (let day = 1; day <= daysInMonth; day += 1) {
+      for (let day = 1; day <= daysInMonth; day++) {
         const iso = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth(), day)).toISOString().slice(0, 10);
         const value = byDate.get(iso) ?? 0;
         const cell = document.createElement('div');
@@ -1016,42 +1065,34 @@ const renderSatisBars = metricSeries => {
           if (value >= goal) cell.classList.add('good');
           if (value < goal) cell.classList.add('bad');
           cell.dataset.count = value;
-        cell.addEventListener('click', () => {
-          document.querySelectorAll('.satis-cell.selected').forEach(existing => {
-            existing.classList.remove('selected');
+          cell.addEventListener('click', () => {
+            document.querySelectorAll('.satis-cell.selected').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.calendar-popup').forEach(el => el.remove());
+            cell.classList.add('selected');
+            const label = statusLabelForValue(value).toLowerCase();
+            const popup = document.createElement('div');
+            popup.className = `calendar-popup ${value >= goal ? 'good' : 'bad'}`;
+            popup.textContent = `${row.name} performed ${articleFor(label)} ${label} ${value} pushups`;
+            calendarsWrap.appendChild(popup);
+            const rect = cell.getBoundingClientRect();
+            const parentRect = calendarsWrap.getBoundingClientRect();
+            const desiredLeft = rect.left - parentRect.left;
+            const desiredTop = rect.bottom - parentRect.top + 8;
+            placePopup(popup, calendarsWrap, desiredLeft, desiredTop);
           });
-          document.querySelectorAll('.calendar-popup').forEach(existing => {
-            existing.remove();
-          });
-          cell.classList.add('selected');
-          const label = statusLabelForValue(value).toLowerCase();
-          popup = document.createElement('div');
-          popup.className = `calendar-popup ${value >= goal ? 'good' : 'bad'}`;
-          popup.textContent = `${row.name} performed ${articleFor(label)} ${label} ${value} pushups`;
-          calendars.appendChild(popup);
-          const rect = cell.getBoundingClientRect();
-          const parentRect = calendars.getBoundingClientRect();
-          const desiredLeft = rect.left - parentRect.left;
-          const desiredTop = rect.bottom - parentRect.top + 8;
-          placePopup(popup, calendars, desiredLeft, desiredTop);
-        });
         }
         cell.textContent = day;
         grid.appendChild(cell);
       }
-
       month.appendChild(title);
       month.appendChild(weekdayRow);
       month.appendChild(grid);
-      calendars.appendChild(month);
+      calendarsWrap.appendChild(month);
     });
 
-    wrapper.appendChild(name);
-    wrapper.appendChild(calendars);
-    detailsSection.appendChild(wrapper);
-  });
+    container.appendChild(calendarsWrap);
+  };
 
-  satisBars.appendChild(detailsSection);
 };
 
 const renderVictories = (metricSeries, dates) => {
