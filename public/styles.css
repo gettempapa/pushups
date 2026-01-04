@@ -126,7 +126,7 @@ body::before {
 }
 
 .hero {
-  margin-top: 100px;
+  margin-top: 140px;
 }
 
 .latest-update strong {
@@ -1223,8 +1223,8 @@ canvas {
 }
 
 .pushup-guy.docked {
-  width: 120px;
-  max-width: 120px;
+  width: 150px;
+  max-width: 150px;
   right: auto;
   left: var(--dock-left, 16px);
   top: var(--dock-top, 16px);
@@ -1475,7 +1475,7 @@ canvas {
   }
 
   .pushup-guy.docked {
-    width: 80px;
-    max-width: 80px;
+    width: 100px;
+    max-width: 100px;
   }
 }
