@@ -311,13 +311,15 @@ const buildCombinedCard = (metricSeries, metric, options = {}) => {
     const label = document.createElement('span');
     label.textContent = series.name;
     label.style.color = palette[index % palette.length];
-    const total = series.points[series.points.length - 1]?.close ?? 0;
-    const totalBadge = document.createElement('span');
-    totalBadge.className = 'legend-total';
-    totalBadge.textContent = total;
+    if (options.showTotals !== false) {
+      const total = series.points[series.points.length - 1]?.close ?? 0;
+      const totalBadge = document.createElement('span');
+      totalBadge.className = 'legend-total';
+      totalBadge.textContent = total;
+      item.appendChild(totalBadge);
+    }
     item.appendChild(swatch);
     item.appendChild(label);
-    item.appendChild(totalBadge);
     legend.appendChild(item);
   });
 
@@ -987,7 +989,8 @@ const renderBoard = metric => {
     title: `DAILY VOLUME · ${metric}`,
     note: 'Daily totals · click or tap for details',
     yTicks: [25, 50, 75, 100],
-    yMax: maxDaily
+    yMax: maxDaily,
+    showTotals: false
   });
   charts = [cumulativeChart, dailyChart];
   renderSatisBars(normalizedSeries);
