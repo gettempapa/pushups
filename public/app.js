@@ -8,6 +8,15 @@ const victoryRows = document.getElementById('victory-rows');
 const latestUpdate = document.getElementById('latest-update');
 const averageRows = document.getElementById('average-rows');
 const deadlineClock = document.getElementById('deadline-clock');
+const logFab = document.getElementById('log-fab');
+const logModal = document.getElementById('log-modal');
+const logForm = document.getElementById('log-form');
+const logName = document.getElementById('log-name');
+const logNamesList = document.getElementById('log-names');
+const logDate = document.getElementById('log-date');
+const logCount = document.getElementById('log-count');
+const logStatus = document.getElementById('log-status');
+const logClose = document.getElementById('log-close');
 
 const animation = {
   start: null,
@@ -109,7 +118,32 @@ const formatPstTimestamp = () => {
   const now = new Date();
   const { year, month, day, hour, minute, second } = getPstParts();
   const millis = String(now.getMilliseconds()).padStart(3, '0');
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}.${millis} PST`;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}.${millis}`;
+};
+
+const placePopup = (popup, container, desiredLeft, desiredTop) => {
+  popup.style.left = `${desiredLeft}px`;
+  popup.style.top = `${desiredTop}px`;
+  const popupRect = popup.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  let left = desiredLeft;
+  let top = desiredTop;
+
+  if (popupRect.right > containerRect.right) {
+    left = desiredLeft - popupRect.width - 12;
+  }
+  if (popupRect.left < containerRect.left) {
+    left = 8;
+  }
+  if (popupRect.bottom > containerRect.bottom) {
+    top = desiredTop - popupRect.height - 12;
+  }
+  if (popupRect.top < containerRect.top) {
+    top = 8;
+  }
+
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
 };
 
 const colorForValue = value => {
@@ -133,22 +167,22 @@ const colorForValue = value => {
 };
 
 const statusLabelForValue = value => {
-  if (value >= 160) return 'APOCALYPTIC';
-  if (value >= 140) return 'FERAL';
-  if (value >= 120) return 'NUCLEAR';
-  if (value >= 110) return 'SAVAGE';
-  if (value >= 101) return 'RELENTLESS';
-  if (value >= 100) return 'SATISFACTORY';
-  if (value >= 90) return 'NEARLY-THERE';
-  if (value >= 80) return 'STRONG';
-  if (value >= 70) return 'SOLID';
-  if (value >= 60) return 'STEADY';
-  if (value >= 50) return 'WARMING';
-  if (value >= 40) return 'DECENT';
-  if (value >= 30) return 'WEAK';
-  if (value >= 20) return 'POOR';
-  if (value >= 10) return 'SAD';
-  return 'PATHETIC';
+  if (value >= 160) return 'FUCKING APOCALYPTIC';
+  if (value >= 140) return 'FUCKING FERAL';
+  if (value >= 120) return 'FUCKING NUCLEAR';
+  if (value >= 110) return 'FUCKING SAVAGE';
+  if (value >= 101) return 'FUCKING RELENTLESS';
+  if (value >= 100) return 'FUCKING SATISFACTORY';
+  if (value >= 90) return 'FUCKING NEARLY-THERE';
+  if (value >= 80) return 'FUCKING STRONG';
+  if (value >= 70) return 'FUCKING SOLID';
+  if (value >= 60) return 'FUCKING STEADY';
+  if (value >= 50) return 'FUCKING WARMING';
+  if (value >= 40) return 'FUCKING DECENT';
+  if (value >= 30) return 'FUCKING WEAK';
+  if (value >= 20) return 'FUCKING POOR';
+  if (value >= 10) return 'FUCKING SAD';
+  return 'FUCKING PATHETIC';
 };
 
 const articleFor = word => {
@@ -422,10 +456,13 @@ const drawCombinedChart = (ctx, seriesList, progress, metricLabel, hoverState, h
     const x = dateCount > 1 ? (width / totalSegments) * i : width / 2;
     const isEdge = i === 0 || i === dateCount - 1;
     const labelWidth = ctx.measureText(label).width;
-    const left = x - labelWidth / 2;
-    const right = x + labelWidth / 2;
+    let labelX = x - labelWidth / 2;
+    if (labelX < 0) labelX = 0;
+    if (labelX + labelWidth > width) labelX = width - labelWidth;
+    const left = labelX;
+    const right = labelX + labelWidth;
     if (!isEdge && left <= lastLabelRight + 12) continue;
-    ctx.fillText(label, x - labelWidth / 2, height + 26);
+    ctx.fillText(label, labelX, height + 26);
     lastLabelRight = right;
   }
 
@@ -690,11 +727,12 @@ const renderSatisBars = metricSeries => {
           popup = document.createElement('div');
           popup.className = `calendar-popup ${value >= goal ? 'good' : 'bad'}`;
           popup.textContent = `${row.name} performed ${articleFor(label)} ${label} ${value} pushups`;
+          calendars.appendChild(popup);
           const rect = cell.getBoundingClientRect();
           const parentRect = calendars.getBoundingClientRect();
-          popup.style.left = `${rect.left - parentRect.left}px`;
-          popup.style.top = `${rect.bottom - parentRect.top + 8}px`;
-          calendars.appendChild(popup);
+          const desiredLeft = rect.left - parentRect.left;
+          const desiredTop = rect.bottom - parentRect.top + 8;
+          placePopup(popup, calendars, desiredLeft, desiredTop);
         });
         }
         cell.textContent = day;
@@ -848,6 +886,13 @@ const normalizeSeries = (metricSeries, dates) =>
     return { name: series.name, points };
   });
 
+const getSeriesForMetric = metric => {
+  if (!payloadCache) return [];
+  const metricSeries = payloadCache.seriesByMetric?.[metric] || payloadCache.series || [];
+  const dates = canonicalDates.length ? canonicalDates : payloadCache.dates || [];
+  return dates.length ? normalizeSeries(metricSeries, dates) : metricSeries;
+};
+
 const renderBoard = metric => {
   if (!payloadCache) return;
   board.innerHTML = '';
@@ -948,9 +993,13 @@ const renderBoard = metric => {
       const adjective = statusLabelForValue(point.daily).toLowerCase();
       chart.tooltip.textContent = `${chart.series[closest.seriesIndex].name} performed ${articleFor(adjective)} ${adjective} ${point.daily} pushups`;
       chart.tooltip.className = `calendar-popup ${point.daily >= goal ? 'good' : 'bad'}`;
-      chart.tooltip.style.left = `${padding.left + closest.px + 12}px`;
-      chart.tooltip.style.top = `${padding.top + closest.py - 12}px`;
-      chart.canvas.parentElement?.appendChild(chart.tooltip);
+      const container = chart.canvas.parentElement;
+      if (container) {
+        container.appendChild(chart.tooltip);
+        const desiredLeft = padding.left + closest.px + 12;
+        const desiredTop = padding.top + closest.py - 12;
+        placePopup(chart.tooltip, container, desiredLeft, desiredTop);
+      }
       drawAll(animation.progress);
     };
 
@@ -972,6 +1021,85 @@ const renderBoard = metric => {
   requestAnimationFrame(animate);
 };
 
+const populateLogNames = series => {
+  if (!logNamesList) return;
+  logNamesList.innerHTML = '';
+  series.forEach(entry => {
+    const option = document.createElement('option');
+    option.value = entry.name;
+    logNamesList.appendChild(option);
+  });
+};
+
+const openLogModal = () => {
+  if (!logModal) return;
+  logModal.classList.add('open');
+  logModal.setAttribute('aria-hidden', 'false');
+  if (logDate) logDate.value = getPstIsoDate();
+  if (logCount) logCount.value = '';
+  if (logStatus) logStatus.textContent = '';
+  if (payloadCache && logNamesList && logNamesList.children.length === 0) {
+    populateLogNames(getSeriesForMetric('pushups'));
+  }
+};
+
+const closeLogModal = () => {
+  if (!logModal) return;
+  logModal.classList.remove('open');
+  logModal.setAttribute('aria-hidden', 'true');
+};
+
+if (logFab) logFab.addEventListener('click', openLogModal);
+if (logClose) logClose.addEventListener('click', closeLogModal);
+if (logModal) {
+  logModal.addEventListener('click', event => {
+    if (event.target === logModal) closeLogModal();
+  });
+}
+
+if (logForm) {
+  logForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!logName || !logDate || !logCount || !logStatus) return;
+
+    const name = logName.value.trim();
+    const date = logDate.value;
+    const count = Number(logCount.value);
+    if (!name || !date || !Number.isFinite(count)) {
+      logStatus.textContent = 'Enter a name, date, and pushup count.';
+      return;
+    }
+
+    const series = getSeriesForMetric('pushups');
+    const existing = series.find(entry => entry.name === name)?.points.find(point => point.date === date)?.value ?? 0;
+    let mode = 'add';
+    if (existing > 0) {
+      const add = window.confirm(`${name} already has ${existing} pushups on ${date}. Add to that total?`);
+      if (add) {
+        mode = 'add';
+      } else {
+        const replace = window.confirm(`Replace that total with ${count}?`);
+        if (!replace) return;
+        mode = 'set';
+      }
+    }
+
+    logStatus.textContent = 'Saving...';
+    try {
+      const res = await fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, date, pushups: count, mode, existingTotal: existing })
+      });
+      if (!res.ok) throw new Error('Failed');
+      closeLogModal();
+      await loadData();
+    } catch (error) {
+      logStatus.textContent = 'Failed to log pushups.';
+    }
+  });
+}
+
 const loadData = async () => {
   statusEl.textContent = 'Syncing...';
   const res = await fetch('/api/data');
@@ -987,6 +1115,7 @@ const loadData = async () => {
     setupDateFilter(payload.dates);
   }
   renderMetricButtons(metrics);
+  populateLogNames(getSeriesForMetric('pushups'));
   renderBoard(currentMetric);
 };
 

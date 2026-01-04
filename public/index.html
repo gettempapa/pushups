@@ -9,9 +9,9 @@
   <body class="jetbrains_mono">
     <main class="page">
       <div class="warning-banner">
-        <div class="warning-text">⚠️ 100 PUSHUPS DEADLINE ⚠️</div>
+        <div class="warning-text">⚠️ 100 PUSHUPS DEADLINE APPROACHING ⚠️</div>
         <div class="warning-clock">
-          <span>Time Remaining (PST)</span>
+          <span>Time Remaining</span>
           <strong id="deadline-clock">--:--:--</strong>
         </div>
       </div>
@@ -19,7 +19,7 @@
 
       <header class="hero">
         <div class="hero-text">
-          <p class="hero-kicker">PUSHUP LEADERBOARD</p>
+          <p class="hero-kicker">ACCOUNTABILITY MODE</p>
           <h1>PUSHUP ACCOUNTABILITY TRACKER</h1>
           <p class="hero-sub">DAILY MINIMUM: 100 PUSHUPS.</p>
         </div>
@@ -75,6 +75,35 @@
         <p>Data source: Google Sheets</p>
       </footer>
     </main>
+
+    <button id="log-fab" class="log-fab" type="button">LOG PUSHUP(S)</button>
+    <div id="log-modal" class="log-modal" aria-hidden="true">
+      <div class="log-card">
+        <div class="log-header">
+          <h3>LOG PUSHUP(S)</h3>
+          <button id="log-close" class="log-close" type="button">✕</button>
+        </div>
+        <form id="log-form" class="log-form">
+          <label>
+            <span>Name</span>
+            <input id="log-name" list="log-names" required />
+            <datalist id="log-names"></datalist>
+          </label>
+          <label>
+            <span>Date</span>
+            <input id="log-date" type="date" required />
+          </label>
+          <label>
+            <span>Pushups</span>
+            <input id="log-count" type="number" min="0" step="1" required />
+          </label>
+          <div class="log-actions">
+            <span id="log-status" class="log-status"></span>
+            <button class="log-submit" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script src="app.js"></script>
   </body>
