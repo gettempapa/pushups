@@ -150,6 +150,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .metric-toggle {
@@ -957,6 +958,28 @@ canvas {
   }
 }
 
+@media (max-width: 960px) {
+  .page {
+    padding: 32px 18px 48px;
+  }
+
+  .stats.duo {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .satis-calendars {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .page {
     padding: 28px 16px 44px;
@@ -990,6 +1013,14 @@ canvas {
     font-size: clamp(2.2rem, 9vw, 2.9rem);
   }
 
+  .hero-kicker {
+    font-size: 0.85rem;
+  }
+
+  .hero-sub {
+    font-size: 1rem;
+  }
+
   .stats.duo {
     grid-template-columns: 1fr;
   }
@@ -1007,7 +1038,7 @@ canvas {
   .today-bar .value {
     min-width: 0;
     text-align: left;
-    font-size: 1.2rem;
+    font-size: 1.15rem;
   }
 
   .chart-layout {
@@ -1019,11 +1050,11 @@ canvas {
   }
 
   .legend-item {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .legend-total {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
   }
 
   .satis-row {
@@ -1036,7 +1067,7 @@ canvas {
   }
 
   .satis-weekdays {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 
   .satis-grid {
@@ -1044,12 +1075,12 @@ canvas {
   }
 
   .satis-cell {
-    font-size: 1rem;
+    font-size: 0.95rem;
     border-radius: 6px;
   }
 
   .victory-row {
-    font-size: 1.05rem;
+    font-size: 1rem;
   }
 
   canvas {
