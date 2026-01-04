@@ -173,10 +173,10 @@ const colorForValue = value => {
 };
 
 const statusLabelForValue = value => {
-  if (value >= 160) return 'APOCALYPTIC';
-  if (value >= 140) return 'FERAL';
-  if (value >= 120) return 'NUCLEAR';
-  if (value >= 110) return 'SAVAGE';
+  if (value >= 160) return 'ABSOLUTE CHAD-LIKE';
+  if (value >= 140) return 'GODLIKE';
+  if (value >= 120) return 'SUPERHUMAN';
+  if (value >= 110) return 'MIND-BOGGLING';
   if (value >= 101) return 'RELENTLESS';
   if (value >= 100) return 'SATISFACTORY';
   if (value >= 90) return 'LEGENDARY';
