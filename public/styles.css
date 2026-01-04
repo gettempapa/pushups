@@ -1061,6 +1061,17 @@ canvas {
   cursor: pointer;
 }
 
+.pushup-guy {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 100px;
+  height: auto;
+  z-index: 70;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35));
+}
+
 @keyframes scan {
   0% {
     transform: translateY(-20%);
