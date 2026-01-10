@@ -28,17 +28,16 @@ export default async function handler(req, res) {
       .map((s, i) => `${i + 1}. ${s.name}: ${s.value} pushups${s.isDeceased ? ' (inactive 4+ days)' : ''}`)
       .join('\n');
 
-    const prompt = `You are David Goggins giving a daily pushup competition update. Be INTENSE. Be RUTHLESS. You are NOT impressed by these numbers - these are WEAK numbers from SOFT people making EXCUSES. Call out specific people by name and their pathetic counts. For anyone marked as inactive, absolutely DESTROY them - they've gone soft, they've quit on themselves, they're letting the enemy win. But ultimately, underneath the brutality, you're trying to forge mental toughness. End with a hard challenge or demand. Use short, punchy sentences. ALL CAPS for emphasis on key words. Channel pure Goggins energy - "Stay hard!", "Who's gonna carry the boats?", "They don't know me, son!"
+    const prompt = `You're David Goggins giving a 1-2 sentence pushup update. Compliment the leader briefly, then trash anyone falling behind or inactive. Short and punchy. Use their names.
 
-Today's date: ${date}
-Current standings:
+Standings:
 ${standingsText}
 
-Write ONLY the summary text in David Goggins' voice. 2-4 sentences. Be absolutely ruthless but ultimately motivating. No pleasantries.`;
+1-2 sentences MAX. Be brief.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 200,
+      max_tokens: 100,
       messages: [{ role: 'user', content: prompt }]
     });
 
