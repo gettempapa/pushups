@@ -276,7 +276,7 @@ const updateDeadlineClock = () => {
   const millis = String(Math.floor(remaining % 1000)).padStart(3, '0');
   const timeStr = `${hours}:${minutes}:${seconds}.${millis}`;
   if (deadlineClock) deadlineClock.textContent = timeStr;
-  if (deadlineClockHeader) deadlineClockHeader.textContent = `${hours}:${minutes}:${seconds}`;
+  if (deadlineClockHeader) deadlineClockHeader.textContent = `${hours}:${minutes}:${seconds}.${millis}`;
 };
 
 const getLocalIsoDate = () => {

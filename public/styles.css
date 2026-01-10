@@ -103,22 +103,36 @@ body {
 .header-deadline {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  animation: deadlinePulse 1s ease-in-out infinite;
 }
 
 .header-deadline-label {
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: var(--danger);
   text-transform: uppercase;
+  animation: deadlineFlash 0.5s ease-in-out infinite;
 }
 
 .header-deadline-clock {
   font-size: 0.875rem;
   font-weight: 700;
-  color: var(--text);
+  color: var(--danger);
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 8px rgba(255, 59, 48, 0.6);
+  animation: deadlineFlash 0.5s ease-in-out infinite;
+}
+
+@keyframes deadlineFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes deadlinePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
 
 .status-hidden {
