@@ -2461,17 +2461,16 @@ requestAnimationFrame(() => {
     });
   };
 
-  // Navigate to tab - direct scroll
+  // Navigate to tab - direct scroll using offsetLeft
   const panels = tabContainer.querySelectorAll('.tab-panel');
   const goToTab = (index) => {
-    console.log('goToTab called with index:', index);
+    console.log('goToTab called with index:', index, 'panels:', panels.length);
     updateActiveTab(index);
-    // Use setTimeout to ensure we're in a clean call stack
-    setTimeout(() => {
-      if (panels[index]) {
-        panels[index].scrollIntoView({ behavior: 'smooth', inline: 'start' });
-      }
-    }, 0);
+    if (panels[index]) {
+      const targetLeft = panels[index].offsetLeft;
+      console.log('Scrolling to offsetLeft:', targetLeft);
+      tabContainer.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    }
   };
 
   // Expose globally
