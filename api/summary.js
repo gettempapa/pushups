@@ -28,11 +28,12 @@ export default async function handler(req, res) {
       .map((s, i) => `${i + 1}. ${s.name}: ${s.value} pushups${s.isDeceased ? ' (inactive 4+ days)' : ''}`)
       .join('\n');
 
-    const prompt = `Write a detached third-person sports ticker summary of today's pushup standings. 2-3 very short snappy bullet points. No first or second person. Highlight leaders positively, trash anyone failing or inactive. Use names.
+    const prompt = `ESPN bottom-ticker style pushup update. One line, like a golf leaderboard scroll. Names, numbers, quick sharp jab at slackers. Third person only.
 
 ${standingsText}
 
-Format: 2-3 bullet points, each under 10 words. Cold, detached, brutally honest.`;
+One sentence. Ticker style. Example: "Smith leads at 85, Jones close behind at 72 — Williams still missing in action."`;
+
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
