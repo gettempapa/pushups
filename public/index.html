@@ -20,8 +20,8 @@
 
     <nav class="tab-bar">
       <button class="tab-btn active" data-tab="0" onclick="window.navigateToTab(0)">Today</button>
-      <button class="tab-btn" data-tab="1" onclick="window.navigateToTab(1)">Stats</button>
-      <button class="tab-btn" data-tab="2" onclick="window.navigateToTab(2)">Board</button>
+      <button class="tab-btn" data-tab="1" onclick="window.navigateToTab(1)">Log</button>
+      <button class="tab-btn" data-tab="2" onclick="window.navigateToTab(2)">Stats</button>
     </nav>
 
     <main class="tab-container" id="tab-container">
@@ -41,8 +41,69 @@
         </div>
       </section>
 
-      <!-- TAB 1: STATS -->
+      <!-- TAB 1: LOG WORKOUT -->
       <section class="tab-panel" data-panel="1">
+        <div class="panel-content">
+          <div class="section-card log-panel">
+            <div class="section-header">
+              <h2 id="log-title">LOG WORKOUT</h2>
+            </div>
+            <div class="log-type-toggle">
+              <button type="button" id="log-type-pushups" class="log-type-btn active">Pushups</button>
+              <button type="button" id="log-type-miles" class="log-type-btn">Miles</button>
+            </div>
+            <form id="log-form" class="log-form">
+              <label>
+                <span>Name</span>
+                <select id="log-name" required></select>
+              </label>
+              <label>
+                <span>Date</span>
+                <input id="log-date" type="date" required />
+              </label>
+              <label id="log-count-label">
+                <span id="log-count-text">Pushups</span>
+                <input id="log-count" type="number" min="0" step="1" required />
+              </label>
+              <div id="miles-dial-container" class="miles-dial-container" style="display: none;">
+                <span class="dial-label">Tap or drag to set miles</span>
+                <div id="miles-dial" class="miles-dial">
+                  <svg class="dial-svg" viewBox="0 0 120 120">
+                    <circle class="dial-track-bg" cx="60" cy="60" r="52" />
+                    <circle id="dial-progress" class="dial-progress" cx="60" cy="60" r="52" />
+                  </svg>
+                  <div id="dial-value" class="dial-value">0.0</div>
+                </div>
+                <div class="dial-controls">
+                  <button type="button" id="dial-minus" class="dial-btn">-</button>
+                  <button type="button" id="dial-plus" class="dial-btn">+</button>
+                </div>
+                <button type="button" id="dial-reset" class="dial-reset">Reset</button>
+              </div>
+              <div id="log-existing" class="log-existing" aria-hidden="true">
+                <p id="log-existing-text"></p>
+                <div class="log-choice">
+                  <label>
+                    <input type="radio" name="log-mode" value="add" checked />
+                    <span>Add to existing total</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="log-mode" value="set" />
+                    <span>Replace existing total</span>
+                  </label>
+                </div>
+              </div>
+              <div class="log-actions">
+                <span id="log-status" class="log-status"></span>
+                <button class="log-submit" type="submit">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: STATS -->
+      <section class="tab-panel" data-panel="2">
         <div class="panel-content">
           <div class="warning-banner">
             <div class="warning-text">⚠️ DEADLINE APPROACHING ⚠️</div>
@@ -58,6 +119,13 @@
           </div>
 
           <div id="latest-update" class="latest-update"></div>
+
+          <div class="section-card">
+            <div class="section-header">
+              <h2>LEADERBOARD</h2>
+            </div>
+            <div id="board" class="board"></div>
+          </div>
 
           <div class="section-card">
             <div class="section-header">
@@ -93,75 +161,7 @@
           </div>
         </div>
       </section>
-
-      <!-- TAB 2: LEADERBOARD -->
-      <section class="tab-panel" data-panel="2">
-        <div class="panel-content">
-          <div id="board" class="board"></div>
-        </div>
-      </section>
     </main>
-
-    <button id="log-fab" class="log-fab" type="button">LOG WORKOUT</button>
-
-    <div id="log-modal" class="log-modal" aria-hidden="true">
-      <div class="log-card">
-        <div class="log-header">
-          <h3 id="log-title">LOG PUSHUP(S)</h3>
-          <button id="log-close" class="log-close" type="button">✕</button>
-        </div>
-        <div class="log-type-toggle">
-          <button type="button" id="log-type-pushups" class="log-type-btn active">Pushups</button>
-          <button type="button" id="log-type-miles" class="log-type-btn">Miles</button>
-        </div>
-        <form id="log-form" class="log-form">
-          <label>
-            <span>Name</span>
-            <select id="log-name" required></select>
-          </label>
-          <label>
-            <span>Date</span>
-            <input id="log-date" type="date" required />
-          </label>
-          <label id="log-count-label">
-            <span id="log-count-text">Pushups</span>
-            <input id="log-count" type="number" min="0" step="1" required />
-          </label>
-          <div id="miles-dial-container" class="miles-dial-container" style="display: none;">
-            <span class="dial-label">Tap or drag to set miles</span>
-            <div id="miles-dial" class="miles-dial">
-              <svg class="dial-svg" viewBox="0 0 120 120">
-                <circle class="dial-track-bg" cx="60" cy="60" r="52" />
-                <circle id="dial-progress" class="dial-progress" cx="60" cy="60" r="52" />
-              </svg>
-              <div id="dial-value" class="dial-value">0.0</div>
-            </div>
-            <div class="dial-controls">
-              <button type="button" id="dial-minus" class="dial-btn">-</button>
-              <button type="button" id="dial-plus" class="dial-btn">+</button>
-            </div>
-            <button type="button" id="dial-reset" class="dial-reset">Reset</button>
-          </div>
-          <div id="log-existing" class="log-existing" aria-hidden="true">
-            <p id="log-existing-text"></p>
-            <div class="log-choice">
-              <label>
-                <input type="radio" name="log-mode" value="add" checked />
-                <span>Add to existing total</span>
-              </label>
-              <label>
-                <input type="radio" name="log-mode" value="set" />
-                <span>Replace existing total</span>
-              </label>
-            </div>
-          </div>
-          <div class="log-actions">
-            <span id="log-status" class="log-status"></span>
-            <button class="log-submit" type="submit">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
 
     <div id="success-toast" class="success-toast">
       <img id="success-toast-roaring" class="roaring-guy-large" src="roaring_guy.png" alt="" style="display: none;" />

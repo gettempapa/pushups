@@ -9,14 +9,11 @@ const latestUpdate = document.getElementById('latest-update');
 const averageRows = document.getElementById('average-rows');
 const deadlineClock = document.getElementById('deadline-clock');
 const deadlineClockHeader = document.getElementById('deadline-clock-header');
-const logFab = document.getElementById('log-fab');
-const logModal = document.getElementById('log-modal');
 const logForm = document.getElementById('log-form');
 const logName = document.getElementById('log-name');
 const logDate = document.getElementById('log-date');
 const logCount = document.getElementById('log-count');
 const logStatus = document.getElementById('log-status');
-const logClose = document.getElementById('log-close');
 const logExisting = document.getElementById('log-existing');
 const logExistingText = document.getElementById('log-existing-text');
 const dailySummary = document.getElementById('daily-summary');
@@ -1729,10 +1726,8 @@ const refreshLogExisting = () => {
   }
 };
 
-const openLogModal = () => {
-  if (!logModal) return;
-  logModal.classList.add('open');
-  logModal.setAttribute('aria-hidden', 'false');
+// Initialize log form with today's date
+const initLogForm = () => {
   if (logDate) logDate.value = getLocalIsoDate();
   if (logCount) logCount.value = '';
   if (logStatus) logStatus.textContent = '';
@@ -1746,19 +1741,15 @@ const openLogModal = () => {
   refreshLogExisting();
 };
 
-const closeLogModal = () => {
-  if (!logModal) return;
-  logModal.classList.remove('open');
-  logModal.setAttribute('aria-hidden', 'true');
+// Reset form after successful submission
+const resetLogForm = () => {
+  if (logCount) logCount.value = '';
+  if (logStatus) logStatus.textContent = '';
+  if (logExisting) {
+    logExisting.setAttribute('aria-hidden', 'true');
+    logExisting.classList.remove('visible');
+  }
 };
-
-if (logFab) logFab.addEventListener('click', openLogModal);
-if (logClose) logClose.addEventListener('click', closeLogModal);
-if (logModal) {
-  logModal.addEventListener('click', event => {
-    if (event.target === logModal) closeLogModal();
-  });
-}
 if (logName) logName.addEventListener('change', refreshLogExisting);
 if (logDate) logDate.addEventListener('change', refreshLogExisting);
 if (logName) {
@@ -1796,9 +1787,10 @@ if (logForm) {
         if (!res.ok) {
           throw new Error(data.error || 'Failed to log miles');
         }
-        closeLogModal();
+        resetLogForm();
         showSuccessToast(`${name} logged ${milesValue.toFixed(1)} miles! Keep moving!`);
         await loadData();
+        if (window.navigateToTab) window.navigateToTab(0);
       } catch (error) {
         console.error('Miles log error:', error);
         logStatus.textContent = error.message || 'Failed to log miles.';
@@ -1850,11 +1842,12 @@ if (logForm) {
             if (!res.ok) throw new Error('Failed');
           }
         }
-        closeLogModal();
+        resetLogForm();
         showSuccessToast(`Uh oh, time to check your pushup privilege! Katie Wilson has redistributed this batch of ${count} pushups fairly to all competitors.`);
         await loadData();
         const updatedSeries = getSeriesForMetric('pushups');
         generateDailySummary(updatedSeries, date);
+        if (window.navigateToTab) window.navigateToTab(0);
         return;
       } else {
         const res = await fetch('/api/log', {
@@ -1863,7 +1856,7 @@ if (logForm) {
           body: JSON.stringify({ name, date, pushups: count, mode, existingTotal: existing })
         });
         if (!res.ok) throw new Error('Failed');
-        closeLogModal();
+        resetLogForm();
         const message = getMotivationalMessage(name, count);
         const newTotal = mode === 'add' ? existing + count : count;
         const showRoaring = count >= 30 || newTotal > goal;
@@ -1873,6 +1866,7 @@ if (logForm) {
       // Generate a new daily summary after logging pushups
       const updatedSeries = getSeriesForMetric('pushups');
       generateDailySummary(updatedSeries, date);
+      if (window.navigateToTab) window.navigateToTab(0);
     } catch (error) {
       logStatus.textContent = 'Failed to log pushups.';
     }
@@ -2075,6 +2069,7 @@ const loadData = async () => {
     }
     renderMetricButtons(metrics);
     populateLogNames(getSeriesForMetric('pushups'));
+    initLogForm();
     renderBoard(currentMetric);
 
     // Load miles data
@@ -2307,9 +2302,10 @@ const updateActiveTab = (index) => {
 
 // Click/tap to navigate tabs - exposed globally for onclick handlers
 window.navigateToTab = (tabIndex) => {
-  if (tabContainer) {
-    const panelWidth = tabContainer.clientWidth;
-    tabContainer.scrollTo({ left: tabIndex * panelWidth, behavior: 'smooth' });
+  const container = document.getElementById('tab-container');
+  if (container) {
+    const panelWidth = container.clientWidth;
+    container.scrollLeft = tabIndex * panelWidth;
     updateActiveTab(tabIndex);
   }
 };
