@@ -2225,3 +2225,38 @@ loadRandomExercise();
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
 initMascot();
+
+// Tab Navigation
+const tabContainer = document.getElementById('tab-container');
+const tabButtons = document.querySelectorAll('.tab-btn');
+
+const updateActiveTab = (index) => {
+  tabButtons.forEach((btn, i) => {
+    btn.classList.toggle('active', i === index);
+  });
+};
+
+// Click to navigate tabs
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabIndex = parseInt(btn.dataset.tab, 10);
+    const panel = tabContainer.querySelector(`[data-panel="${tabIndex}"]`);
+    if (panel) {
+      panel.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+    }
+  });
+});
+
+// Update active tab on scroll
+if (tabContainer) {
+  let scrollTimeout;
+  tabContainer.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      const scrollLeft = tabContainer.scrollLeft;
+      const panelWidth = tabContainer.clientWidth;
+      const activeIndex = Math.round(scrollLeft / panelWidth);
+      updateActiveTab(activeIndex);
+    }, 50);
+  });
+}

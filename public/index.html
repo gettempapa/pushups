@@ -2,98 +2,111 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <title>PUSHUP ACCOUNTABILITY TRACKER</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="jetbrains_mono">
-    <main class="page">
-      <header class="hero">
-        <div class="hero-text">
-          <h1>PUSHUP ACCOUNTABILITY TRACKER</h1>
-          <p class="hero-sub blood-red">DAILY MINIMUM: 100 PUSHUPS.</p>
-          <div id="exercise-gif" class="exercise-gif"></div>
+    <header class="app-header">
+      <div class="header-content">
+        <h1>PUSHUP TRACKER</h1>
+        <div class="header-right">
+          <span id="status" class="status">Syncing...</span>
         </div>
-        <div class="hero-actions">
-          <div id="metric-toggle" class="metric-toggle"></div>
-          <div class="status-container">
-            <span id="status" class="status">Syncing...</span>
-            <img id="status-flex" class="status-flex" src="flex-gif.gif" alt="" style="display: none;" />
+      </div>
+    </header>
+
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="0">Today</button>
+      <button class="tab-btn" data-tab="1">Stats</button>
+      <button class="tab-btn" data-tab="2">Board</button>
+    </nav>
+
+    <main class="tab-container" id="tab-container">
+      <!-- TAB 0: TODAY -->
+      <section class="tab-panel" data-panel="0">
+        <div class="panel-content">
+          <div class="hero-compact">
+            <p class="hero-sub blood-red">DAILY MINIMUM: 100 PUSHUPS</p>
+            <div id="exercise-gif" class="exercise-gif"></div>
           </div>
-        </div>
-      </header>
 
-      <div class="warning-banner">
-        <div class="warning-text">⚠️ 100 PUSHUPS DAILY DEADLINE APPROACHING ⚠️</div>
-        <div class="warning-clock">
-          <span>Time Remaining</span>
-          <strong id="deadline-clock">--:--:--</strong>
-        </div>
-      </div>
-      <div id="daily-summary" class="daily-summary" style="display: none;">
-        <div class="summary-header">DAILY RECAP</div>
-        <p id="daily-summary-text"></p>
-      </div>
-      <div id="latest-update" class="latest-update"></div>
+          <div class="warning-banner">
+            <div class="warning-text">⚠️ DEADLINE APPROACHING ⚠️</div>
+            <div class="warning-clock">
+              <span>Time Left</span>
+              <strong id="deadline-clock">--:--:--</strong>
+            </div>
+          </div>
 
-      <section class="today">
-        <div class="today-header">
-          <h2>DAILY TRACKER</h2>
-          <div class="today-controls">
-            <label class="day-filter">
-              <span>Day</span>
+          <div id="daily-summary" class="daily-summary" style="display: none;">
+            <div class="summary-header">DAILY RECAP</div>
+            <p id="daily-summary-text"></p>
+          </div>
+
+          <div id="latest-update" class="latest-update"></div>
+
+          <div class="section-card">
+            <div class="section-header">
+              <h2>DAILY TRACKER</h2>
               <div class="date-input">
                 <span class="calendar-icon">📅</span>
                 <input id="day-filter" type="date" />
               </div>
-            </label>
+            </div>
+            <div id="today-bars" class="today-bars"></div>
           </div>
-        </div>
-        <div id="today-bars" class="today-bars"></div>
-      </section>
 
-      <section id="miles-section" class="today miles-section" style="display: none;">
-        <div class="today-header">
-          <h2>DAILY MILES</h2>
-          <p class="section-sub">DAILY GOAL: 10 MILES</p>
-        </div>
-        <div id="miles-bars" class="today-bars miles-bars"></div>
-      </section>
-
-      <section class="stats">
-        <div class="stats-header">
-          <h2>SATISFACTORY VS PATHETIC DAYS</h2>
-        </div>
-        <div id="satis-bars" class="satis-bars"></div>
-      </section>
-
-      <section class="stats duo">
-        <div class="stat-card">
-          <div class="stats-header">
-            <h2>DAILY VICTORIES</h2>
-          </div>
-          <div class="victory-table">
-            <div id="victory-rows"></div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stats-header">
-            <h2>30-DAY AVERAGES</h2>
-          </div>
-          <div class="victory-table">
-            <div id="average-rows"></div>
+          <div id="miles-section" class="section-card" style="display: none;">
+            <div class="section-header">
+              <h2>DAILY MILES</h2>
+              <span class="section-sub">GOAL: 10 MI</span>
+            </div>
+            <div id="miles-bars" class="today-bars miles-bars"></div>
           </div>
         </div>
       </section>
 
-      <section id="board" class="board"></section>
+      <!-- TAB 1: STATS -->
+      <section class="tab-panel" data-panel="1">
+        <div class="panel-content">
+          <div class="section-card">
+            <div class="section-header">
+              <h2>SATISFACTORY VS PATHETIC</h2>
+            </div>
+            <div id="satis-bars" class="satis-bars"></div>
+          </div>
 
-      <footer class="footer">
-        <p>Data source: Google Sheets</p>
-      </footer>
+          <div class="section-card">
+            <div class="section-header">
+              <h2>DAILY VICTORIES</h2>
+            </div>
+            <div class="victory-table">
+              <div id="victory-rows"></div>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-header">
+              <h2>30-DAY AVERAGES</h2>
+            </div>
+            <div class="victory-table">
+              <div id="average-rows"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: LEADERBOARD -->
+      <section class="tab-panel" data-panel="2">
+        <div class="panel-content">
+          <div id="board" class="board"></div>
+        </div>
+      </section>
     </main>
 
-    <button id="log-fab" class="log-fab" type="button">LOG ACTIVITY</button>
+    <button id="log-fab" class="log-fab" type="button">+ LOG</button>
+
     <div id="log-modal" class="log-modal" aria-hidden="true">
       <div class="log-card">
         <div class="log-header">
@@ -152,8 +165,6 @@
         </form>
       </div>
     </div>
-
-    <img class="pushup-guy" src="pushup_guy.gif" alt="Pushup guy" />
 
     <div id="success-toast" class="success-toast">
       <img id="success-toast-roaring" class="roaring-guy-large" src="roaring_guy.png" alt="" style="display: none;" />

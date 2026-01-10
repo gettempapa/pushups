@@ -39,8 +39,9 @@
 
 html, body {
   width: 100%;
+  height: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -56,13 +57,170 @@ body {
   margin: 0;
   padding: 0;
   width: 100%;
+  height: 100%;
   background: var(--bg);
   color: var(--text);
   font-size: 16px;
   line-height: 1.6;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* App Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.app-header h1 {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Tab Bar */
+.tab-bar {
+  display: flex;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  transition: color var(--transition-fast);
+}
+
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: width var(--transition-normal);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+}
+
+.tab-btn.active::after {
+  width: 60%;
+}
+
+/* Tab Container - Swipeable */
+.tab-container {
+  flex: 1;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tab-container::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-panel {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.panel-content {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 100px;
+}
+
+/* Section Cards */
+.section-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header h2 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+}
+
+.section-sub {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* Hero Compact */
+.hero-compact {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.hero-compact .hero-sub {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
 }
 
 .page {
@@ -106,18 +264,17 @@ body {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-radius: var(--radius-lg);
   background: var(--bg-2);
   border: 1px solid var(--panel-border);
-  margin-bottom: 16px;
   box-sizing: border-box;
 }
 
 .warning-text {
-  font-size: 0.875rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text);
 }
@@ -128,13 +285,13 @@ body {
   gap: 2px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   color: var(--muted);
   align-items: flex-end;
 }
 
 .warning-clock strong {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--text);
@@ -142,8 +299,7 @@ body {
 }
 
 .daily-summary {
-  margin-bottom: 16px;
-  padding: 16px 20px;
+  padding: 12px 16px;
   width: 100%;
   border-radius: var(--radius-lg);
   background: var(--bg-2);
