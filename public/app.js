@@ -2020,31 +2020,36 @@ const getMilesSeriesForDate = (date) => {
 };
 
 const loadData = async () => {
-  statusEl.textContent = 'Syncing...';
-  if (latestUpdate) {
-    latestUpdate.textContent = 'Contacting servers to fetch the latest pushup data...';
-  }
-  const res = await fetch('/api/data');
-  if (!res.ok) {
-    statusEl.textContent = 'Sync failed';
-    return;
-  }
-  const payload = await res.json();
-  payloadCache = payload;
-  let metrics = payload.metrics?.length ? payload.metrics : ['pushups'];
-  metrics = metrics.filter(metric => metric === 'pushups');
-  if (!metrics.length) metrics = ['pushups'];
-  if (!metrics.includes(currentMetric)) currentMetric = metrics[0];
-  if (payload.dates?.length) {
-    setupDateFilter(payload.dates);
-  }
-  renderMetricButtons(metrics);
-  populateLogNames(getSeriesForMetric('pushups'));
-  renderBoard(currentMetric);
+  try {
+    statusEl.textContent = 'Syncing...';
+    if (latestUpdate) {
+      latestUpdate.textContent = 'Contacting servers to fetch the latest pushup data...';
+    }
+    const res = await fetch('/api/data');
+    if (!res.ok) {
+      statusEl.textContent = 'Sync failed: ' + res.status;
+      return;
+    }
+    const payload = await res.json();
+    payloadCache = payload;
+    let metrics = payload.metrics?.length ? payload.metrics : ['pushups'];
+    metrics = metrics.filter(metric => metric === 'pushups');
+    if (!metrics.length) metrics = ['pushups'];
+    if (!metrics.includes(currentMetric)) currentMetric = metrics[0];
+    if (payload.dates?.length) {
+      setupDateFilter(payload.dates);
+    }
+    renderMetricButtons(metrics);
+    populateLogNames(getSeriesForMetric('pushups'));
+    renderBoard(currentMetric);
 
-  // Load miles data
-  await loadDistanceExamples();
-  await loadMilesData();
+    // Load miles data
+    await loadDistanceExamples();
+    await loadMilesData();
+  } catch (err) {
+    console.error('loadData error:', err);
+    statusEl.textContent = 'Error: ' + err.message;
+  }
 };
 
 dayFilter.addEventListener('change', event => {
