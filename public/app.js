@@ -68,7 +68,7 @@ const showSuccessToast = (message, showRoaring = false) => {
   }, 4000);
 };
 
-const generateDailySummary = async (series, targetDate) => {
+const generateDailySummary = (series, targetDate) => {
   if (!dailySummary || !dailySummaryText) return;
 
   const todayIso = targetDate || getLocalIsoDate();
@@ -90,26 +90,67 @@ const generateDailySummary = async (series, targetDate) => {
     }
 
     return { name: s.name, value, isDeceased };
+  }).sort((a, b) => b.value - a.value);
+
+  const summary = buildProgrammaticSummary(standings);
+  dailySummaryText.textContent = summary;
+  dailySummary.style.display = 'block';
+
+  // Persist to localStorage
+  localStorage.setItem('dailySummary', JSON.stringify({ summary, date: todayIso, timestamp: Date.now() }));
+};
+
+const buildProgrammaticSummary = (standings) => {
+  if (!standings.length) return '';
+
+  const leaderVerbs = ['dominates', 'leads', 'crushes it', 'on fire', 'absolutely crushing'];
+  const secondVerbs = ['charging hard', 'close behind', 'pushing hard', 'right there', 'hot on the trail'];
+  const midVerbs = ['holding steady', 'grinding', 'putting in work', 'in the mix'];
+  const lowVerbs = ['struggling', 'limping along', 'barely showing up', 'needs coffee'];
+  const patheticVerbs = ['embarrassing themselves', 'phoning it in', 'asleep at the wheel'];
+  const awolVerbs = ['still AWOL', 'missing in action', 'presumed lost', 'gone dark', 'vanished'];
+
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  const parts = [];
+  const active = standings.filter(s => !s.isDeceased);
+  const deceased = standings.filter(s => s.isDeceased);
+
+  active.forEach((s, i) => {
+    let verb;
+    if (i === 0 && s.value > 0) {
+      verb = s.value > 100 ? pick(leaderVerbs) : (s.value > 50 ? 'leads' : 'ahead');
+      parts.push(`${s.name} ${verb} at ${s.value}`);
+    } else if (i === 1 && s.value > 0) {
+      verb = s.value > 80 ? pick(secondVerbs) : 'following';
+      parts.push(`${s.name} ${verb} at ${s.value}`);
+    } else if (s.value > 50) {
+      parts.push(`${s.name} ${pick(midVerbs)} at ${s.value}`);
+    } else if (s.value > 20) {
+      parts.push(`${s.name} ${pick(lowVerbs)} at ${s.value}`);
+    } else if (s.value > 0) {
+      parts.push(`${s.name} ${pick(patheticVerbs)} at ${s.value}`);
+    }
   });
 
-  try {
-    const res = await fetch('/api/summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ standings, date: todayIso })
-    });
-
-    if (!res.ok) throw new Error('Failed to generate summary');
-
-    const { summary } = await res.json();
-    dailySummaryText.textContent = summary;
-    dailySummary.style.display = 'block';
-
-    // Persist to localStorage
-    localStorage.setItem('dailySummary', JSON.stringify({ summary, date: todayIso, timestamp: Date.now() }));
-  } catch (error) {
-    console.error('Failed to generate summary:', error);
+  if (deceased.length > 0) {
+    const names = deceased.map(s => s.name);
+    if (names.length === 1) {
+      parts.push(`${names[0]} ${pick(awolVerbs)} after four days`);
+    } else if (names.length === 2) {
+      parts.push(`${names[0]} and ${names[1]} ${pick(awolVerbs)} after four days`);
+    } else {
+      const last = names.pop();
+      parts.push(`${names.join(', ')} and ${last} ${pick(awolVerbs)}`);
+    }
   }
+
+  // Join with appropriate separators
+  if (parts.length <= 2) {
+    return parts.join(' - ');
+  }
+  const lastPart = parts.pop();
+  return parts.join(', ') + ' - ' + lastPart;
 };
 
 const loadPersistedSummary = () => {
