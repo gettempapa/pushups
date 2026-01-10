@@ -748,11 +748,23 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
   if (!metricSeries.length) return;
 
   const targetDay = selectedDay || dates[dates.length - 1];
+  const todayIso = getLocalIsoDate();
+
   const latestValues = metricSeries.map(series => {
     const byDate = new Map(series.points.map(point => [point.date, point.value]));
+    // Find last day with any pushups logged
+    const datesWithActivity = series.points.filter(p => p.value > 0).map(p => p.date).sort();
+    const lastActiveDate = datesWithActivity.length > 0 ? datesWithActivity[datesWithActivity.length - 1] : null;
+    let daysSinceActive = null;
+    if (lastActiveDate) {
+      const lastDate = new Date(`${lastActiveDate}T00:00:00`);
+      const today = new Date(`${todayIso}T00:00:00`);
+      daysSinceActive = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+    }
     return {
       name: series.name,
-      value: byDate.get(targetDay) ?? 0
+      value: byDate.get(targetDay) ?? 0,
+      isDeceased: daysSinceActive !== null && daysSinceActive >= 4
     };
   });
 
@@ -769,6 +781,12 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     const name = document.createElement('div');
     name.className = 'name';
     name.textContent = item.name;
+    if (item.isDeceased) {
+      const deceased = document.createElement('span');
+      deceased.className = 'deceased-label';
+      deceased.textContent = ' (assumed deceased)';
+      name.appendChild(deceased);
+    }
 
     const track = document.createElement('div');
     track.className = 'bar-track';

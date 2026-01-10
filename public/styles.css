@@ -1059,6 +1059,14 @@ h1 {
   color: var(--text);
 }
 
+.today-bar .deceased-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.8;
+}
+
 .today-bar .trophy {
   font-size: 0.9rem;
 }
