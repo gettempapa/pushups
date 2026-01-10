@@ -73,6 +73,18 @@ body {
   box-sizing: border-box;
 }
 
+.random-mascot {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.random-mascot img {
+  width: 120px;
+  height: auto;
+  border-radius: var(--radius-lg);
+}
+
 .warning-banner {
   display: flex;
   align-items: center;

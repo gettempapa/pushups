@@ -1834,6 +1834,27 @@ loadData().catch(() => {
   statusEl.textContent = 'Sync failed';
 });
 
+// Load random mascot
+const loadRandomMascot = async () => {
+  const container = document.getElementById('random-mascot');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/mascots');
+    if (!res.ok) return;
+    const { mascots } = await res.json();
+    if (mascots && mascots.length > 0) {
+      const random = mascots[Math.floor(Math.random() * mascots.length)];
+      const img = document.createElement('img');
+      img.src = random;
+      img.alt = 'Workout mascot';
+      container.appendChild(img);
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+};
+loadRandomMascot();
+
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
 initMascot();
