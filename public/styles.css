@@ -146,7 +146,7 @@ body {
   background: var(--bg-2);
   border-top: 1px solid var(--panel-border);
   padding: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
   flex-shrink: 0;
   position: fixed;
   bottom: 0;
