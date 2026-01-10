@@ -1015,13 +1015,34 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
         setStolenValorUser(item.name, false);
         renderTodayBars(metricSeries, metric, selectedDay, dates);
       } else {
-        const confirmed = confirm(
-          `⚠️ WARNING ⚠️\n\nYou are about to accuse ${item.name} of STOLEN VALOR.\n\nThis is an EXTREMELY SERIOUS charge.\n\nAre you absolutely sure you want to proceed?`
-        );
-        if (confirmed) {
+        // Show custom modal
+        const overlay = document.createElement('div');
+        overlay.className = 'valor-modal-overlay';
+        overlay.innerHTML = `
+          <div class="valor-modal">
+            <h3>⚠️ WARNING ⚠️</h3>
+            <p>You are about to accuse <strong>${item.name}</strong> of</p>
+            <p style="font-size: 1.1rem; color: var(--danger); font-weight: 700;">STOLEN VALOR</p>
+            <p class="warning-text">This is an EXTREMELY SERIOUS charge.</p>
+            <div class="valor-modal-buttons">
+              <button class="cancel-btn">Cancel</button>
+              <button class="confirm-btn">Confirm</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('.cancel-btn').addEventListener('click', () => {
+          overlay.remove();
+        });
+        overlay.querySelector('.confirm-btn').addEventListener('click', () => {
+          overlay.remove();
           setStolenValorUser(item.name, true);
           renderTodayBars(metricSeries, metric, selectedDay, dates);
-        }
+        });
+        overlay.addEventListener('click', (evt) => {
+          if (evt.target === overlay) overlay.remove();
+        });
       }
     });
 
