@@ -1612,15 +1612,41 @@ if (logForm) {
 
     logStatus.textContent = 'Saving...';
     try {
-      const res = await fetch('/api/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, date, pushups: count, mode, existingTotal: existing })
-      });
-      if (!res.ok) throw new Error('Failed');
-      closeLogModal();
-      const message = getMotivationalMessage(name, count);
-      showSuccessToast(message);
+      // 1/100 chance of pushup redistribution
+      const allNames = series.map(entry => entry.name);
+      const isRedistribution = Math.random() < 0.01 && allNames.length > 1;
+
+      if (isRedistribution) {
+        const perPerson = Math.floor(count / allNames.length);
+        const remainder = count % allNames.length;
+
+        // Log pushups for each person
+        for (let i = 0; i < allNames.length; i++) {
+          const personName = allNames[i];
+          const personCount = perPerson + (i < remainder ? 1 : 0);
+          if (personCount > 0) {
+            const personExisting = series.find(entry => entry.name === personName)?.points.find(point => point.date === date)?.value ?? 0;
+            const res = await fetch('/api/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: personName, date, pushups: personCount, mode: 'add', existingTotal: personExisting })
+            });
+            if (!res.ok) throw new Error('Failed');
+          }
+        }
+        closeLogModal();
+        showSuccessToast(`Uh oh, time to check your pushup privilege! Katie Wilson has redistributed this batch of ${count} pushups fairly to all competitors.`);
+      } else {
+        const res = await fetch('/api/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, date, pushups: count, mode, existingTotal: existing })
+        });
+        if (!res.ok) throw new Error('Failed');
+        closeLogModal();
+        const message = getMotivationalMessage(name, count);
+        showSuccessToast(message);
+      }
       await loadData();
     } catch (error) {
       logStatus.textContent = 'Failed to log pushups.';
