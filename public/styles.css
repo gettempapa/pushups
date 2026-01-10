@@ -1132,10 +1132,10 @@ h1 {
 .today-bar {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: auto 1fr;
   grid-template-rows: auto auto auto;
   align-items: center;
-  gap: 10px;
+  gap: 6px 12px;
   padding: 12px;
   width: 100%;
   border-radius: var(--radius-md);
@@ -1350,6 +1350,34 @@ h1 {
   color: #ffb700;
   text-shadow: 0 0 10px rgba(255, 183, 0, 0.8);
   animation: flameTextPulse 0.4s ease-in-out infinite;
+}
+
+.today-bar .rank {
+  grid-row: 1 / -1;
+  align-self: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 50px;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.today-bar .rank:nth-child(1) {
+  color: #ffd700;
+}
+
+.today-bar:nth-child(1) .rank {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.today-bar:nth-child(2) .rank {
+  color: #c0c0c0;
+}
+
+.today-bar:nth-child(3) .rank {
+  color: #cd7f32;
 }
 
 .today-bar .name {

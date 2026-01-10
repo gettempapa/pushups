@@ -911,9 +911,19 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
   const scaleMax = Math.max(maxValue, goal * 1.2);
   const winnerValue = Math.max(...latestValues.map(item => item.value));
 
-  latestValues.forEach(item => {
+  const getOrdinal = (n) => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  latestValues.forEach((item, index) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'today-bar';
+
+    const rank = document.createElement('div');
+    rank.className = 'rank';
+    rank.textContent = getOrdinal(index + 1);
 
     const name = document.createElement('div');
     name.className = 'name';
@@ -1003,6 +1013,7 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     track.appendChild(goalLabel);
     track.appendChild(bar);
 
+    wrapper.appendChild(rank);
     wrapper.appendChild(name);
     wrapper.appendChild(track);
     wrapper.appendChild(value);
