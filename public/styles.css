@@ -88,12 +88,16 @@ body {
 
 .exercise-gif {
   margin-top: 16px;
+  overflow: visible;
 }
 
 .exercise-gif img {
-  max-width: 350px;
+  max-width: 280px;
+  max-height: 200px;
+  width: auto;
   height: auto;
   object-fit: contain;
+  display: block;
 }
 
 .warning-banner {
