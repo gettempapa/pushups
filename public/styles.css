@@ -1633,6 +1633,95 @@ canvas {
   color: #000;
 }
 
+/* Miles Dial */
+.miles-dial-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.dial-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.miles-dial {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  border: 3px solid var(--panel-border);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.miles-dial:active {
+  cursor: grabbing;
+}
+
+.dial-track {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+}
+
+.dial-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 50%;
+  background: var(--accent);
+  border-radius: 2px;
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.dial-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  pointer-events: none;
+}
+
+.dial-hint {
+  font-size: 0.625rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.dial-reset {
+  padding: 6px 16px;
+  background: var(--bg-3);
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dial-reset:hover {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
 .log-form {
   display: grid;
   gap: 16px;
@@ -1736,7 +1825,7 @@ canvas {
 .pushup-guy {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: 45px;
   width: min(140px, 35vw);
   height: auto;
   z-index: 95;
@@ -2123,6 +2212,6 @@ canvas {
   .pushup-guy {
     width: min(120px, 32vw);
     right: 12px;
-    bottom: 12px;
+    bottom: 40px;
   }
 }

@@ -116,6 +116,16 @@
             <span id="log-count-text">Pushups</span>
             <input id="log-count" type="number" min="0" step="1" required />
           </label>
+          <div id="miles-dial-container" class="miles-dial-container" style="display: none;">
+            <span class="dial-label">Spin to log miles</span>
+            <div id="miles-dial" class="miles-dial">
+              <div class="dial-track"></div>
+              <div id="dial-indicator" class="dial-indicator"></div>
+              <div id="dial-value" class="dial-value">0.0</div>
+            </div>
+            <div class="dial-hint">Drag around the circle</div>
+            <button type="button" id="dial-reset" class="dial-reset">Reset</button>
+          </div>
           <div id="log-existing" class="log-existing" aria-hidden="true">
             <p id="log-existing-text"></p>
             <div class="log-choice">
