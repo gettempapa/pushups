@@ -143,23 +143,14 @@ body {
 /* Tab Bar - Fixed Bottom */
 .tab-bar {
   display: flex;
-  flex-wrap: wrap;
   background: var(--bg-2);
   border-top: 1px solid var(--panel-border);
   flex-shrink: 0;
   position: fixed;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0px);
   left: 0;
   right: 0;
   z-index: 100;
-}
-
-/* Safe area spacer below tabs */
-.tab-bar::after {
-  content: '';
-  width: 100%;
-  height: env(safe-area-inset-bottom, 0px);
-  background: var(--bg-2);
 }
 
 .tab-btn {
@@ -188,7 +179,7 @@ body {
 /* Laser Indicator - Below buttons */
 .tab-indicator {
   position: absolute;
-  bottom: env(safe-area-inset-bottom, 0px);
+  bottom: 0;
   left: 0;
   width: 33.333%;
   height: 3px;
