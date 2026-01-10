@@ -2196,6 +2196,27 @@ const loadRandomMascot = async () => {
 };
 loadRandomMascot();
 
+// Load random exercise GIF under DAILY MINIMUM
+const loadRandomExercise = async () => {
+  const container = document.getElementById('exercise-gif');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/exercises');
+    if (!res.ok) return;
+    const { exercises } = await res.json();
+    if (exercises && exercises.length > 0) {
+      const random = exercises[Math.floor(Math.random() * exercises.length)];
+      const img = document.createElement('img');
+      img.src = random;
+      img.alt = 'Exercise demonstration';
+      container.appendChild(img);
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+};
+loadRandomExercise();
+
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
 initMascot();

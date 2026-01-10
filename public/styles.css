@@ -86,6 +86,16 @@ body {
   vertical-align: middle;
 }
 
+.exercise-gif {
+  margin-top: 16px;
+}
+
+.exercise-gif img {
+  max-width: 200px;
+  height: auto;
+  object-fit: contain;
+}
+
 .warning-banner {
   display: flex;
   align-items: center;
