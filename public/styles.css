@@ -1477,6 +1477,40 @@ h1 {
   opacity: 0.8;
 }
 
+.today-bar .suspected-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--warn);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.today-bar .suspected-label:hover {
+  opacity: 1;
+}
+
+.today-bar .suspected-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--warn);
+  cursor: pointer;
+}
+
+.today-bar .name img.pinocchio {
+  animation: noseGrow 1s ease-in-out infinite alternate;
+}
+
+@keyframes noseGrow {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
 .roaring-guy-small {
   width: 48px;
   height: 48px;

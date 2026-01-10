@@ -37,6 +37,26 @@ let milesPayloadCache = null;
 let distanceExamples = null;
 let exerciseGifs = [];
 let dialMiles = 0;
+
+// Suspected of inflated numbers tracking
+const getSuspectedUsers = () => {
+  try {
+    return JSON.parse(localStorage.getItem('suspectedUsers') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const setSuspectedUser = (name, isSuspected) => {
+  const suspected = getSuspectedUsers();
+  if (isSuspected && !suspected.includes(name)) {
+    suspected.push(name);
+  } else if (!isSuspected) {
+    const idx = suspected.indexOf(name);
+    if (idx !== -1) suspected.splice(idx, 1);
+  }
+  localStorage.setItem('suspectedUsers', JSON.stringify(suspected));
+};
 let dialDragging = false;
 const DIAL_MAX_MILES = 15;
 const DIAL_CIRCUMFERENCE = 326.73; // 2 * PI * 52
@@ -926,29 +946,55 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     const name = document.createElement('div');
     name.className = 'name';
     name.textContent = item.name;
-    if (item.value > goal) {
+
+    // Check if user is suspected of inflated numbers
+    const suspectedUsers = getSuspectedUsers();
+    const isSuspected = suspectedUsers.includes(item.name);
+
+    // Create image element (will be swapped if suspected)
+    const personImg = document.createElement('img');
+    personImg.alt = '';
+
+    if (isSuspected) {
+      // Show pinocchio for suspected users
+      personImg.src = 'pinnochio.gif';
+      personImg.className = 'exercise-guy-small pinocchio';
+      name.appendChild(personImg);
+    } else if (item.value > goal) {
       // 100+ pushups: roaring guy (vibrating)
-      const roaring = document.createElement('img');
-      roaring.src = 'roaring_guy.png';
-      roaring.className = 'roaring-guy-small';
-      roaring.alt = '';
-      name.appendChild(roaring);
+      personImg.src = 'roaring_guy.png';
+      personImg.className = 'roaring-guy-small';
+      name.appendChild(personImg);
     } else if (item.value >= 80) {
       // 80-99 pushups: pushup guy (not vibrating)
-      const pushupGuy = document.createElement('img');
-      pushupGuy.src = 'pushup_guy.gif';
-      pushupGuy.className = 'exercise-guy-small';
-      pushupGuy.alt = '';
-      name.appendChild(pushupGuy);
+      personImg.src = 'pushup_guy.gif';
+      personImg.className = 'exercise-guy-small';
+      name.appendChild(personImg);
     } else if (item.value > 0 && exerciseGifs && exerciseGifs.length > 0) {
       // 1-79 pushups: random exercise GIF (not vibrating)
-      const exerciseImg = document.createElement('img');
       const randomGif = exerciseGifs[Math.floor(Math.random() * exerciseGifs.length)];
-      exerciseImg.src = randomGif;
-      exerciseImg.className = 'exercise-guy-small';
-      exerciseImg.alt = '';
-      name.appendChild(exerciseImg);
+      personImg.src = randomGif;
+      personImg.className = 'exercise-guy-small';
+      name.appendChild(personImg);
     }
+
+    // Suspected checkbox
+    const suspectedLabel = document.createElement('label');
+    suspectedLabel.className = 'suspected-label';
+    const suspectedCheckbox = document.createElement('input');
+    suspectedCheckbox.type = 'checkbox';
+    suspectedCheckbox.className = 'suspected-checkbox';
+    suspectedCheckbox.checked = isSuspected;
+    suspectedCheckbox.addEventListener('change', (e) => {
+      e.stopPropagation();
+      setSuspectedUser(item.name, e.target.checked);
+      // Re-render to update images
+      renderTodayBars(metricSeries, metric, selectedDay, dates);
+    });
+    suspectedLabel.appendChild(suspectedCheckbox);
+    suspectedLabel.appendChild(document.createTextNode(' SUSPECTED OF INFLATED NUMBERS'));
+    name.appendChild(suspectedLabel);
+
     if (item.isDeceased) {
       const deceased = document.createElement('span');
       deceased.className = 'deceased-label';
