@@ -186,6 +186,7 @@ body {
     0 0 8px var(--accent),
     0 0 16px var(--accent),
     0 0 24px rgba(0, 214, 50, 0.4);
+  pointer-events: none;
 }
 
 .tab-indicator::before {

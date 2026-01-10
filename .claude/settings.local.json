@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(echo $ANTHROPIC_API_KEY)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(git reset:*)",
+      "Bash(vercel env pull:*)",
+      "Bash(vercel env:*)",
+      "Bash(vercel:*)",
+      "WebFetch(domain:realfood.gov)",
+      "Bash(curl:*)",
+      "Bash(nslookup:*)",
+      "WebSearch",
+      "Bash(ffmpeg:*)"
+    ]
+  }
+}
