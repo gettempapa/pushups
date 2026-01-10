@@ -222,13 +222,10 @@ body {
 
 h1 {
   margin: 0 0 8px;
-  font-size: clamp(0.7rem, 2.8vw, 1.5rem);
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--text) 0%, var(--neon) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text);
   white-space: normal;
 }
 
@@ -1143,8 +1140,8 @@ h1 {
 }
 
 .roaring-guy-small {
-  width: 24px;
-  height: 24px;
+  width: 48px;
+  height: 48px;
   margin-left: 8px;
   animation: subtleShake 0.3s ease-in-out infinite;
 }
@@ -1491,29 +1488,26 @@ canvas {
 
 .log-fab {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 50;
+  right: 16px;
+  bottom: 16px;
+  z-index: 90;
   padding: 14px 24px;
   border-radius: 999px;
-  border: 1px solid rgba(34, 211, 238, 0.4);
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(167, 139, 250, 0.1));
-  backdrop-filter: blur(12px);
-  color: var(--text);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #000;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .log-fab:hover {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(167, 139, 250, 0.15));
-  border-color: rgba(34, 211, 238, 0.6);
+  background: var(--accent-2);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(34, 211, 238, 0.2);
 }
 
 .log-modal {
