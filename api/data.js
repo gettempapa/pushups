@@ -1,230 +1,95 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { google } from 'googleapis';
+import { createClient } from '@supabase/supabase-js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(__dirname, '..', 'pushups-483221-9a37d8039be6.json');
-const sheetId = process.env.SHEET_ID ? process.env.SHEET_ID.trim() : undefined;
-const sheetName = process.env.SHEET_NAME ? process.env.SHEET_NAME.trim() : 'Sheet1';
-
-const parseDateString = value => {
-  if (!value) return null;
-  const str = String(value).trim();
-  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (isoMatch) {
-    const [, y, m, d] = isoMatch;
-    return new Date(Date.UTC(Number(y), Number(m) - 1, Number(d)));
-  }
-  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (slashMatch) {
-    const [, m, d, yRaw] = slashMatch;
-    const year = yRaw.length === 2 ? 2000 + Number(yRaw) : Number(yRaw);
-    return new Date(Date.UTC(year, Number(m) - 1, Number(d)));
-  }
-  const parsed = new Date(str);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
-
-const toISODate = date => date.toISOString().slice(0, 10);
-
-const getAuth = () => {
-  const rawB64 = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_B64;
-  if (rawB64) {
-    const json = Buffer.from(rawB64, 'base64').toString('utf8');
-    const credentials = JSON.parse(json);
-    return new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    });
-  }
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  if (raw) {
-    const credentials = JSON.parse(raw);
-    return new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    });
-  }
-  return new google.auth.GoogleAuth({
-    keyFile,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets']
-  });
+const getSupabase = () => {
+  if (!supabaseUrl || !supabaseKey) return null;
+  return createClient(supabaseUrl, supabaseKey);
 };
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
-  if (!sheetId) {
-    res.status(400).json({ error: 'Missing SHEET_ID. Set it in the environment.' });
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    res.status(500).json({ error: 'Database not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.' });
     return;
   }
 
   try {
-    const auth = getAuth();
-    const sheets = google.sheets({ version: 'v4', auth });
-    const range = `${sheetName}!A1:ZZ`;
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range
+    // Get all pushups data
+    const { data: pushups, error: pushupsError } = await supabase
+      .from('pushups')
+      .select('name, date, count')
+      .order('date', { ascending: true });
+
+    if (pushupsError) throw pushupsError;
+
+    // Get all users for the name dropdown
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('name')
+      .order('name', { ascending: true });
+
+    if (usersError) throw usersError;
+
+    // Process pushups into series format
+    const dateSet = new Set();
+    const nameSet = new Set();
+    const totals = new Map(); // name -> date -> total
+
+    pushups.forEach(row => {
+      const date = row.date;
+      const name = row.name;
+      const count = row.count || 0;
+
+      dateSet.add(date);
+      nameSet.add(name);
+
+      if (!totals.has(name)) totals.set(name, new Map());
+      const perDate = totals.get(name);
+      perDate.set(date, (perDate.get(date) || 0) + count);
     });
 
-    const values = response.data.values || [];
-    if (values.length === 0) {
-      res.json({ series: [], dates: [] });
-      return;
-    }
+    // Also add users from users table
+    users.forEach(u => nameSet.add(u.name));
 
-    const headers = values[0].map(header => String(header || '').trim());
-    const lowerHeaders = headers.map(header => header.toLowerCase());
-    const rows = values.slice(1).filter(row => row.some(cell => cell));
+    const dates = Array.from(dateSet).sort();
+    const names = Array.from(nameSet).sort();
 
-    const dateIndex = lowerHeaders.indexOf('date');
-    const nameIndex = lowerHeaders.indexOf('name');
-    const pushupsIndex = lowerHeaders.indexOf('pushups');
-    const pullupsIndex = lowerHeaders.indexOf('pullups');
-
-    let dates = [];
-    let series = [];
-    let seriesByMetric = {};
-    let metrics = [];
-    let latestEntry = null;
-
-    if (dateIndex !== -1 && nameIndex !== -1 && pushupsIndex !== -1) {
-      const dateOrder = [];
-      const nameOrder = [];
-      const metricColumns = [
-        { key: 'pushups', index: pushupsIndex },
-        { key: 'pullups', index: pullupsIndex }
-      ].filter(metric => metric.index !== -1);
-      const totalsByMetric = new Map();
-
-      rows.forEach(row => {
-        const date = row[dateIndex];
-        const name = row[nameIndex];
-        if (!date || !name) return;
-
-        const normalizedName = String(name).trim();
-        const normalizedDate = String(date).trim();
-        const parsedDate = parseDateString(normalizedDate);
-        const isoKey = parsedDate ? toISODate(parsedDate) : normalizedDate;
-
-        if (!dateOrder.includes(isoKey)) dateOrder.push(isoKey);
-        if (!nameOrder.includes(normalizedName)) nameOrder.push(normalizedName);
-
-        metricColumns.forEach(metric => {
-          const rawValue = row[metric.index];
-          const value = Number(rawValue);
-          const safeValue = rawValue === undefined || rawValue === '' || rawValue === null
-            ? 0
-            : Number.isFinite(value)
-              ? value
-              : 0;
-
-          if (!totalsByMetric.has(metric.key)) totalsByMetric.set(metric.key, new Map());
-          const totalsByName = totalsByMetric.get(metric.key);
-
-          if (!totalsByName.has(normalizedName)) totalsByName.set(normalizedName, new Map());
-          const perDate = totalsByName.get(normalizedName);
-          perDate.set(isoKey, (perDate.get(isoKey) || 0) + safeValue);
-        });
-      });
-
-      const sortedDates = [...dateOrder];
-      const parsedDates = sortedDates.map(date => ({
+    const series = names.map(name => {
+      const perDate = totals.get(name) || new Map();
+      const points = dates.map(date => ({
         date,
-        parsed: parseDateString(date)
+        value: perDate.get(date) || 0
       }));
-      parsedDates.sort((a, b) => {
-        if (a.parsed && b.parsed) return a.parsed - b.parsed;
-        if (a.parsed) return -1;
-        if (b.parsed) return 1;
-        return String(a.date).localeCompare(String(b.date));
-      });
+      return { name, points };
+    });
 
-      dates = parsedDates.map(item => item.date);
-      metrics = metricColumns.map(metric => metric.key);
-      seriesByMetric = Object.fromEntries(
-        metrics.map(metric => {
-          const totalsByName = totalsByMetric.get(metric) || new Map();
-          const metricSeries = nameOrder.map(name => {
-            const perDate = totalsByName.get(name) || new Map();
-            const points = dates.map(date => ({
-              date,
-              value: perDate.get(date) || 0
-            }));
-            return { name, points };
-          });
-          return [metric, metricSeries];
-        })
-      );
-      series = seriesByMetric.pushups || [];
-
-      for (let i = rows.length - 1; i >= 0; i -= 1) {
-        const row = rows[i];
-        const date = row[dateIndex];
-        const name = row[nameIndex];
-        const rawValue = row[pushupsIndex];
-        if (!date || !name) continue;
-        const value = Number(rawValue);
-        const safeValue = rawValue === undefined || rawValue === '' || rawValue === null
-          ? 0
-          : Number.isFinite(value)
-            ? value
-            : 0;
-        if (safeValue <= 0) continue;
-        const parsedDate = parseDateString(String(date).trim());
+    // Find latest entry with value > 0
+    let latestEntry = null;
+    for (let i = pushups.length - 1; i >= 0; i--) {
+      if (pushups[i].count > 0) {
         latestEntry = {
-          date: parsedDate ? toISODate(parsedDate) : String(date).trim(),
-          name: String(name).trim(),
-          value: safeValue
+          date: pushups[i].date,
+          name: pushups[i].name,
+          value: pushups[i].count
         };
         break;
       }
-    } else {
-      const people = headers.slice(1).filter(Boolean);
-      const wideRows = rows.filter(row => row[0]);
-
-      dates = wideRows.map(row => row[0]);
-
-      series = people.map((name, index) => {
-        const points = wideRows.map(row => {
-          const raw = row[index + 1];
-          const value = Number(raw);
-          return {
-            date: row[0],
-            value: Number.isFinite(value) ? value : 0
-          };
-        });
-
-        return { name, points };
-      });
-      metrics = ['pushups'];
-      seriesByMetric = { pushups: series };
-
-      for (let i = wideRows.length - 1; i >= 0; i -= 1) {
-        const row = wideRows[i];
-        const date = row[0];
-        if (!date) continue;
-        for (let j = row.length - 1; j >= 1; j -= 1) {
-          const raw = row[j];
-          const value = Number(raw);
-          if (!Number.isFinite(value) || value <= 0) continue;
-          const parsedDate = parseDateString(String(date).trim());
-          latestEntry = {
-            date: parsedDate ? toISODate(parsedDate) : String(date).trim(),
-            name: people[j - 1],
-            value
-          };
-          break;
-        }
-        if (latestEntry) break;
-      }
     }
 
-    res.json({ series, seriesByMetric, metrics, dates, goal: 100, latestEntry });
+    res.json({
+      series,
+      seriesByMetric: { pushups: series },
+      metrics: ['pushups'],
+      dates,
+      goal: 100,
+      latestEntry
+    });
   } catch (error) {
-    console.error('Failed to load sheet data', error);
-    res.status(500).json({ error: 'Failed to load sheet data' });
+    console.error('Failed to load data', error);
+    res.status(500).json({ error: 'Failed to load data' });
   }
 }
