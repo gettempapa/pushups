@@ -41,6 +41,11 @@ html, body {
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+* {
+  max-width: 100%;
 }
 
 .jetbrains_mono {
@@ -305,10 +310,47 @@ h1 {
   border-color: rgba(148, 163, 184, 0.2);
 }
 
+.status-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .status {
   color: var(--muted);
   font-size: 0.8125rem;
   font-weight: 400;
+}
+
+.status.live {
+  color: var(--success);
+  animation: statusBlink 1s ease-in-out infinite;
+}
+
+.status.live::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pingDot 1s ease-in-out infinite;
+}
+
+@keyframes statusBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes pingDot {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+  50% { transform: scale(1.2); box-shadow: 0 0 8px 4px rgba(52, 211, 153, 0.3); }
+}
+
+.status-flex {
+  width: 28px;
+  height: 28px;
 }
 
 .board {

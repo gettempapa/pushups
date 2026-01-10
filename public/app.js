@@ -783,6 +783,9 @@ const animate = timestamp => {
   } else {
     animation.running = false;
     statusEl.textContent = 'Live now';
+    statusEl.classList.add('live');
+    const statusFlex = document.getElementById('status-flex');
+    if (statusFlex) statusFlex.style.display = 'block';
   }
 };
 
