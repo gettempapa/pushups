@@ -980,14 +980,17 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
 
     const value = document.createElement('div');
     value.className = 'value';
+    const countRow = document.createElement('div');
+    countRow.className = 'count-row';
     const count = document.createElement('span');
     count.className = 'count';
     count.textContent = item.value;
     const unit = document.createElement('span');
     unit.className = 'unit';
     unit.textContent = metric === 'pushups' ? 'push-ups' : metric;
-    value.appendChild(count);
-    value.appendChild(unit);
+    countRow.appendChild(count);
+    countRow.appendChild(unit);
+    value.appendChild(countRow);
 
     if (item.value > goal) {
       wrapper.classList.add('flame');
