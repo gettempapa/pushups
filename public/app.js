@@ -2304,13 +2304,13 @@ initMascot();
   indicator.className = 'tab-indicator';
   tabBar.appendChild(indicator);
 
-  // Update indicator position based on scroll progress
+  // Update indicator position based on scroll
   const updateIndicator = () => {
     const scrollLeft = tabContainer.scrollLeft;
-    const maxScroll = tabContainer.scrollWidth - tabContainer.clientWidth;
-    const progress = maxScroll > 0 ? scrollLeft / maxScroll : 0;
+    const panelWidth = tabContainer.clientWidth || 1;
     const tabWidth = 100 / numTabs;
-    const position = progress * (100 - tabWidth);
+    const scrollProgress = scrollLeft / panelWidth;
+    const position = scrollProgress * tabWidth;
     indicator.style.left = position + '%';
     indicator.style.width = tabWidth + '%';
   };
@@ -2322,36 +2322,52 @@ initMascot();
     });
   };
 
-  // Navigate to tab
+  // Navigate to tab with manual animation
   const goToTab = (index) => {
     const panelWidth = tabContainer.clientWidth;
-    tabContainer.scrollTo({
-      left: index * panelWidth,
-      behavior: 'smooth'
-    });
+    const target = index * panelWidth;
+    const start = tabContainer.scrollLeft;
+    const change = target - start;
+    const duration = 250;
+    let startTime = null;
+
+    const animate = (time) => {
+      if (!startTime) startTime = time;
+      const elapsed = time - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out quad
+      const ease = 1 - (1 - progress) * (1 - progress);
+      tabContainer.scrollLeft = start + change * ease;
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+    updateActiveTab(index);
   };
 
   // Expose globally
   window.navigateToTab = goToTab;
 
-  // Click handlers for tab buttons
+  // Click handlers - use onclick for maximum compatibility
   tabButtons.forEach((btn, index) => {
-    btn.addEventListener('click', (e) => {
+    btn.onclick = function(e) {
       e.preventDefault();
       goToTab(index);
-    });
+    };
   });
 
-  // Track scroll for indicator animation
+  // Track scroll for indicator
   tabContainer.addEventListener('scroll', () => {
     updateIndicator();
-    // Update active class based on closest tab
     const scrollLeft = tabContainer.scrollLeft;
-    const panelWidth = tabContainer.clientWidth;
+    const panelWidth = tabContainer.clientWidth || 1;
     const activeIndex = Math.round(scrollLeft / panelWidth);
     updateActiveTab(activeIndex);
   });
 
-  // Initial position
+  // Initial setup
   updateIndicator();
+  updateActiveTab(0);
 })();
