@@ -1001,7 +1001,7 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
       name.appendChild(personImg);
     }
 
-    // Report button with dropdown menu
+    // Report button - Stolen Valor accusation
     const reportContainer = document.createElement('div');
     reportContainer.className = 'report-container';
 
@@ -1010,63 +1010,24 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     reportBtn.className = 'report-btn';
     reportBtn.textContent = '⚑ REPORT';
 
-    const reportMenu = document.createElement('div');
-    reportMenu.className = 'report-menu';
-
-    // Inflated numbers option
-    const inflatedOption = document.createElement('label');
-    inflatedOption.className = 'report-option';
-    const inflatedCheckbox = document.createElement('input');
-    inflatedCheckbox.type = 'checkbox';
-    inflatedCheckbox.checked = isSuspected;
-    inflatedCheckbox.addEventListener('change', (e) => {
+    reportBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      setSuspectedUser(item.name, e.target.checked);
-      renderTodayBars(metricSeries, metric, selectedDay, dates);
-    });
-    inflatedOption.appendChild(inflatedCheckbox);
-    inflatedOption.appendChild(document.createTextNode(' Suspected of Inflated Numbers'));
-
-    // Stolen valor option
-    const valorOption = document.createElement('label');
-    valorOption.className = 'report-option';
-    const valorCheckbox = document.createElement('input');
-    valorCheckbox.type = 'checkbox';
-    valorCheckbox.checked = isStolenValor;
-    valorCheckbox.addEventListener('change', (e) => {
-      e.stopPropagation();
-      if (e.target.checked) {
+      if (isStolenValor) {
+        // Already accused - remove accusation
+        setStolenValorUser(item.name, false);
+        renderTodayBars(metricSeries, metric, selectedDay, dates);
+      } else {
         const confirmed = confirm(
           `⚠️ WARNING ⚠️\n\nYou are about to accuse ${item.name} of STOLEN VALOR.\n\nThis is an EXTREMELY SERIOUS charge.\n\nAre you absolutely sure you want to proceed?`
         );
         if (confirmed) {
           setStolenValorUser(item.name, true);
           renderTodayBars(metricSeries, metric, selectedDay, dates);
-        } else {
-          e.target.checked = false;
         }
-      } else {
-        setStolenValorUser(item.name, false);
-        renderTodayBars(metricSeries, metric, selectedDay, dates);
       }
-    });
-    valorOption.appendChild(valorCheckbox);
-    valorOption.appendChild(document.createTextNode(' Stolen Valor'));
-
-    reportMenu.appendChild(inflatedOption);
-    reportMenu.appendChild(valorOption);
-
-    reportBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Close other open menus
-      document.querySelectorAll('.report-menu.open').forEach(m => {
-        if (m !== reportMenu) m.classList.remove('open');
-      });
-      reportMenu.classList.toggle('open');
     });
 
     reportContainer.appendChild(reportBtn);
-    reportContainer.appendChild(reportMenu);
 
     if (item.isDeceased) {
       const deceased = document.createElement('span');
