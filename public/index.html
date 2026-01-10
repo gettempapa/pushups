@@ -9,11 +9,15 @@
   <body class="jetbrains_mono">
     <header class="app-header">
       <div class="header-content">
-        <h1>PUSHUP TRACKER</h1>
+        <h1>PUSHUP ACCOUNTABILITY TRACKER</h1>
         <div class="header-right">
-          <span id="status" class="status">Syncing...</span>
+          <div class="header-deadline">
+            <span class="header-deadline-label">100 MIN</span>
+            <strong id="deadline-clock-header" class="header-deadline-clock">--:--:--</strong>
+          </div>
         </div>
       </div>
+      <span id="status" class="status-hidden"></span>
     </header>
 
     <nav class="tab-bar">

@@ -100,6 +100,31 @@ body {
   gap: 12px;
 }
 
+.header-deadline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-deadline-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--danger);
+  text-transform: uppercase;
+}
+
+.header-deadline-clock {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-hidden {
+  display: none;
+}
+
 /* Tab Bar */
 .tab-bar {
   display: flex;

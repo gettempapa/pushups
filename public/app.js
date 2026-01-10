@@ -8,6 +8,7 @@ const victoryRows = document.getElementById('victory-rows');
 const latestUpdate = document.getElementById('latest-update');
 const averageRows = document.getElementById('average-rows');
 const deadlineClock = document.getElementById('deadline-clock');
+const deadlineClockHeader = document.getElementById('deadline-clock-header');
 const logFab = document.getElementById('log-fab');
 const logModal = document.getElementById('log-modal');
 const logForm = document.getElementById('log-form');
@@ -263,7 +264,6 @@ const getPstParts = () => {
 };
 
 const updateDeadlineClock = () => {
-  if (!deadlineClock) return;
   const now = new Date();
   const { year, month, day, hour, minute, second } = getPstParts();
   const nowUtc = Date.UTC(year, month - 1, day, hour, minute, second) + now.getMilliseconds();
@@ -274,7 +274,9 @@ const updateDeadlineClock = () => {
   const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
   const seconds = String(totalSeconds % 60).padStart(2, '0');
   const millis = String(Math.floor(remaining % 1000)).padStart(3, '0');
-  deadlineClock.textContent = `${hours}:${minutes}:${seconds}.${millis}`;
+  const timeStr = `${hours}:${minutes}:${seconds}.${millis}`;
+  if (deadlineClock) deadlineClock.textContent = timeStr;
+  if (deadlineClockHeader) deadlineClockHeader.textContent = `${hours}:${minutes}:${seconds}`;
 };
 
 const getLocalIsoDate = () => {
