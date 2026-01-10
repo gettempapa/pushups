@@ -19,9 +19,9 @@
     </header>
 
     <nav class="tab-bar">
-      <button class="tab-btn active" data-tab="0" type="button" onclick="alert('Today clicked!')">Today</button>
-      <button class="tab-btn" data-tab="1" type="button" onclick="alert('Log clicked!')">Log</button>
-      <button class="tab-btn" data-tab="2" type="button" onclick="alert('Stats clicked!')">Stats</button>
+      <button class="tab-btn active" data-tab="0" type="button" onclick="document.getElementById('tab-container').scrollTo({left: 0, behavior: 'smooth'})">Today</button>
+      <button class="tab-btn" data-tab="1" type="button" onclick="document.getElementById('tab-container').scrollTo({left: document.getElementById('tab-container').clientWidth, behavior: 'smooth'})">Log</button>
+      <button class="tab-btn" data-tab="2" type="button" onclick="document.getElementById('tab-container').scrollTo({left: document.getElementById('tab-container').clientWidth * 2, behavior: 'smooth'})">Stats</button>
     </nav>
 
     <main class="tab-container" id="tab-container">
