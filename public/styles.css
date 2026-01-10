@@ -212,15 +212,25 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* Hero Compact */
-.hero-compact {
-  text-align: center;
-  padding: 8px 0;
+/* Today Hero - Large GIF */
+.today-hero {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
 }
 
-.hero-compact .hero-sub {
-  margin: 0 0 8px;
-  font-size: 0.875rem;
+.exercise-gif-large {
+  display: flex;
+  justify-content: center;
+}
+
+.exercise-gif-large img {
+  max-width: 100%;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .page {

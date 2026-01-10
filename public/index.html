@@ -26,11 +26,26 @@
       <!-- TAB 0: TODAY -->
       <section class="tab-panel" data-panel="0">
         <div class="panel-content">
-          <div class="hero-compact">
-            <p class="hero-sub blood-red">DAILY MINIMUM: 100 PUSHUPS</p>
-            <div id="exercise-gif" class="exercise-gif"></div>
+          <div class="today-hero">
+            <div id="exercise-gif" class="exercise-gif-large"></div>
           </div>
 
+          <div class="section-card">
+            <div class="section-header">
+              <h2>DAILY TRACKER</h2>
+              <div class="date-input">
+                <span class="calendar-icon">📅</span>
+                <input id="day-filter" type="date" />
+              </div>
+            </div>
+            <div id="today-bars" class="today-bars"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 1: STATS -->
+      <section class="tab-panel" data-panel="1">
+        <div class="panel-content">
           <div class="warning-banner">
             <div class="warning-text">⚠️ DEADLINE APPROACHING ⚠️</div>
             <div class="warning-clock">
@@ -46,30 +61,6 @@
 
           <div id="latest-update" class="latest-update"></div>
 
-          <div class="section-card">
-            <div class="section-header">
-              <h2>DAILY TRACKER</h2>
-              <div class="date-input">
-                <span class="calendar-icon">📅</span>
-                <input id="day-filter" type="date" />
-              </div>
-            </div>
-            <div id="today-bars" class="today-bars"></div>
-          </div>
-
-          <div id="miles-section" class="section-card" style="display: none;">
-            <div class="section-header">
-              <h2>DAILY MILES</h2>
-              <span class="section-sub">GOAL: 10 MI</span>
-            </div>
-            <div id="miles-bars" class="today-bars miles-bars"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 1: STATS -->
-      <section class="tab-panel" data-panel="1">
-        <div class="panel-content">
           <div class="section-card">
             <div class="section-header">
               <h2>SATISFACTORY VS PATHETIC</h2>
@@ -93,6 +84,14 @@
             <div class="victory-table">
               <div id="average-rows"></div>
             </div>
+          </div>
+
+          <div id="miles-section" class="section-card" style="display: none;">
+            <div class="section-header">
+              <h2>DAILY MILES</h2>
+              <span class="section-sub">GOAL: 10 MI</span>
+            </div>
+            <div id="miles-bars" class="today-bars miles-bars"></div>
           </div>
         </div>
       </section>
