@@ -1198,7 +1198,7 @@ h1 {
   grid-template-rows: auto auto auto;
   align-items: center;
   gap: 6px 12px;
-  padding: 12px;
+  padding: 12px 12px 28px 12px;
   width: 100%;
   border-radius: var(--radius-md);
   border: 1px solid var(--panel-border);
@@ -1510,7 +1510,7 @@ h1 {
 /* Report button */
 .today-bar .report-container {
   position: absolute;
-  top: 8px;
+  bottom: 6px;
   right: 8px;
 }
 
@@ -1986,17 +1986,30 @@ canvas {
   font-size: 0.75rem;
 }
 
-/* Log Panel Styles */
+/* Log Panel Styles - Compact single-screen layout */
+.tab-panel[data-panel="1"] {
+  overflow-y: hidden;
+}
+
+.tab-panel[data-panel="1"] .panel-content {
+  height: 100%;
+  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .log-panel {
-  padding: 20px;
+  padding: 16px;
+  flex: 0 0 auto;
 }
 
 .log-panel .section-header {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .log-panel .section-header h2 {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
 }
 
 .log-modal {
@@ -2203,12 +2216,12 @@ canvas {
 
 .log-form {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .log-form label {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -2221,7 +2234,7 @@ canvas {
   background: var(--panel);
   border: 1px solid var(--panel-border);
   color: var(--text);
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: var(--radius-md);
   font-size: 0.9375rem;
   transition: all var(--transition-fast);
