@@ -178,34 +178,44 @@ body {
 .tab-indicator {
   position: absolute;
   bottom: 0;
+  left: 0;
+  width: 33.333%;
   height: 3px;
-  background: var(--accent);
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent), transparent);
   border-radius: 3px 3px 0 0;
-  transition: left 0.05s linear;
+  transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
-    0 0 8px var(--accent),
-    0 0 16px var(--accent),
-    0 0 24px rgba(0, 214, 50, 0.4);
+    0 0 10px var(--accent),
+    0 0 20px var(--accent),
+    0 0 30px var(--accent),
+    0 0 40px rgba(0, 214, 50, 0.3);
   pointer-events: none;
 }
 
 .tab-indicator::before {
   content: '';
   position: absolute;
-  inset: -2px -4px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.5;
-  filter: blur(4px);
+  inset: -4px -8px;
+  background: linear-gradient(90deg, transparent 10%, var(--accent) 50%, transparent 90%);
+  opacity: 0.6;
+  filter: blur(6px);
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .tab-indicator::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.8);
+  top: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  border-radius: 2px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
 }
 
 /* Tab Container - Swipeable */
