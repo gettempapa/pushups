@@ -1488,9 +1488,9 @@ h1 {
 
 /* Report button and dropdown */
 .today-bar .report-container {
-  position: relative;
-  display: inline-block;
-  margin-left: 8px;
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
 }
 
 .today-bar .report-btn {
@@ -1505,6 +1505,11 @@ h1 {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
+  opacity: 0.5;
+}
+
+.today-bar:hover .report-btn {
+  opacity: 1;
 }
 
 .today-bar .report-btn:hover {
@@ -1515,9 +1520,9 @@ h1 {
 .today-bar .report-menu {
   display: none;
   position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
   background: var(--bg-2);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-sm);
