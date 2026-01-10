@@ -1001,48 +1001,73 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
       name.appendChild(personImg);
     }
 
-    // Suspected checkbox - only show for Addis
-    if (item.name.toLowerCase() === 'addis') {
-      const suspectedLabel = document.createElement('label');
-      suspectedLabel.className = 'suspected-label';
-      const suspectedCheckbox = document.createElement('input');
-      suspectedCheckbox.type = 'checkbox';
-      suspectedCheckbox.className = 'suspected-checkbox';
-      suspectedCheckbox.checked = isSuspected;
-      suspectedCheckbox.addEventListener('change', (e) => {
-        e.stopPropagation();
-        setSuspectedUser(item.name, e.target.checked);
-        // Re-render to update images
-        renderTodayBars(metricSeries, metric, selectedDay, dates);
-      });
-      suspectedLabel.appendChild(suspectedCheckbox);
-      suspectedLabel.appendChild(document.createTextNode(' SUSPECTED OF INFLATED NUMBERS'));
-      name.appendChild(suspectedLabel);
-    }
+    // Report button with dropdown menu
+    const reportContainer = document.createElement('div');
+    reportContainer.className = 'report-container';
 
-    // Stolen Valor button
-    const valorBtn = document.createElement('button');
-    valorBtn.type = 'button';
-    valorBtn.className = 'stolen-valor-btn' + (isStolenValor ? ' accused' : '');
-    valorBtn.textContent = isStolenValor ? '⚠️ ACCUSED OF STOLEN VALOR' : 'Accuse of Stolen Valor';
-    valorBtn.addEventListener('click', (e) => {
+    const reportBtn = document.createElement('button');
+    reportBtn.type = 'button';
+    reportBtn.className = 'report-btn';
+    reportBtn.textContent = '⚑ REPORT';
+
+    const reportMenu = document.createElement('div');
+    reportMenu.className = 'report-menu';
+
+    // Inflated numbers option
+    const inflatedOption = document.createElement('label');
+    inflatedOption.className = 'report-option';
+    const inflatedCheckbox = document.createElement('input');
+    inflatedCheckbox.type = 'checkbox';
+    inflatedCheckbox.checked = isSuspected;
+    inflatedCheckbox.addEventListener('change', (e) => {
       e.stopPropagation();
-      if (isStolenValor) {
-        // Already accused - clicking removes the accusation
-        setStolenValorUser(item.name, false);
-        renderTodayBars(metricSeries, metric, selectedDay, dates);
-      } else {
-        // Show confirmation dialog
+      setSuspectedUser(item.name, e.target.checked);
+      renderTodayBars(metricSeries, metric, selectedDay, dates);
+    });
+    inflatedOption.appendChild(inflatedCheckbox);
+    inflatedOption.appendChild(document.createTextNode(' Suspected of Inflated Numbers'));
+
+    // Stolen valor option
+    const valorOption = document.createElement('label');
+    valorOption.className = 'report-option';
+    const valorCheckbox = document.createElement('input');
+    valorCheckbox.type = 'checkbox';
+    valorCheckbox.checked = isStolenValor;
+    valorCheckbox.addEventListener('change', (e) => {
+      e.stopPropagation();
+      if (e.target.checked) {
         const confirmed = confirm(
           `⚠️ WARNING ⚠️\n\nYou are about to accuse ${item.name} of STOLEN VALOR.\n\nThis is an EXTREMELY SERIOUS charge.\n\nAre you absolutely sure you want to proceed?`
         );
         if (confirmed) {
           setStolenValorUser(item.name, true);
           renderTodayBars(metricSeries, metric, selectedDay, dates);
+        } else {
+          e.target.checked = false;
         }
+      } else {
+        setStolenValorUser(item.name, false);
+        renderTodayBars(metricSeries, metric, selectedDay, dates);
       }
     });
-    name.appendChild(valorBtn);
+    valorOption.appendChild(valorCheckbox);
+    valorOption.appendChild(document.createTextNode(' Stolen Valor'));
+
+    reportMenu.appendChild(inflatedOption);
+    reportMenu.appendChild(valorOption);
+
+    reportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close other open menus
+      document.querySelectorAll('.report-menu.open').forEach(m => {
+        if (m !== reportMenu) m.classList.remove('open');
+      });
+      reportMenu.classList.toggle('open');
+    });
+
+    reportContainer.appendChild(reportBtn);
+    reportContainer.appendChild(reportMenu);
+    name.appendChild(reportContainer);
 
     if (item.isDeceased) {
       const deceased = document.createElement('span');
@@ -1114,10 +1139,19 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
 
     if (metric === 'pushups') {
       const adjective = document.createElement('span');
-      const statusClass = statusClassForValue(item.value);
-      const modifier = statusClass.split(' ')[1] || 'neutral';
-      adjective.className = `adjective ${modifier}`;
-      adjective.textContent = statusLabelForValue(item.value);
+      // Show accusation as descriptor if accused
+      if (isStolenValor) {
+        adjective.className = 'adjective accused';
+        adjective.textContent = 'STOLEN VALOR';
+      } else if (isSuspected) {
+        adjective.className = 'adjective accused';
+        adjective.textContent = 'SUSPECTED OF INFLATED NUMBERS';
+      } else {
+        const statusClass = statusClassForValue(item.value);
+        const modifier = statusClass.split(' ')[1] || 'neutral';
+        adjective.className = `adjective ${modifier}`;
+        adjective.textContent = statusLabelForValue(item.value);
+      }
       value.appendChild(adjective);
     }
 
@@ -2381,6 +2415,13 @@ loadExerciseGifs().then(() => {
 });
 loadRandomMascot();
 
+// Close report menus when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.report-container')) {
+    document.querySelectorAll('.report-menu.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
 initMascot();
@@ -2436,11 +2477,21 @@ requestAnimationFrame(() => {
   // Expose globally
   window.navigateToTab = goToTab;
 
-  // Tab button click handlers
+  // Tab button click/touch handlers
+  let lastTap = 0;
   tabButtons.forEach((btn, index) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
       goToTab(index);
     });
+    btn.addEventListener('touchstart', (e) => {
+      // Prevent double-firing with click
+      const now = Date.now();
+      if (now - lastTap < 300) return;
+      lastTap = now;
+      e.preventDefault();
+      goToTab(index);
+    }, { passive: false });
   });
 
   // Track scroll for indicator
