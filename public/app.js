@@ -2240,23 +2240,31 @@ const updateActiveTab = (index) => {
 tabButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     const tabIndex = parseInt(btn.dataset.tab, 10);
-    const panel = tabContainer.querySelector(`[data-panel="${tabIndex}"]`);
-    if (panel) {
-      panel.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+    if (tabContainer) {
+      const panelWidth = tabContainer.clientWidth;
+      tabContainer.scrollTo({ left: tabIndex * panelWidth, behavior: 'smooth' });
+      updateActiveTab(tabIndex);
     }
   });
 });
 
-// Update active tab on scroll
+// Update active tab on scroll (with scrollend for better detection)
 if (tabContainer) {
-  let scrollTimeout;
-  tabContainer.addEventListener('scroll', () => {
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(() => {
-      const scrollLeft = tabContainer.scrollLeft;
-      const panelWidth = tabContainer.clientWidth;
-      const activeIndex = Math.round(scrollLeft / panelWidth);
-      updateActiveTab(activeIndex);
-    }, 50);
-  });
+  const handleScrollEnd = () => {
+    const scrollLeft = tabContainer.scrollLeft;
+    const panelWidth = tabContainer.clientWidth;
+    const activeIndex = Math.round(scrollLeft / panelWidth);
+    updateActiveTab(activeIndex);
+  };
+
+  // Use scrollend if supported, otherwise debounce scroll
+  if ('onscrollend' in window) {
+    tabContainer.addEventListener('scrollend', handleScrollEnd);
+  } else {
+    let scrollTimeout;
+    tabContainer.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(handleScrollEnd, 100);
+    });
+  }
 }
