@@ -1189,7 +1189,7 @@ h1 {
   grid-template-rows: auto auto auto;
   align-items: center;
   gap: 6px 12px;
-  padding: 12px 12px 28px 12px;
+  padding: 12px 12px 38px 12px;
   width: 100%;
   border-radius: var(--radius-md);
   border: 1px solid var(--panel-border);
@@ -1670,7 +1670,6 @@ h1 {
   font-size: 1rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
-  padding-right: 70px;
 }
 
 .today-bar .value .count-row {
