@@ -2290,43 +2290,68 @@ updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
 initMascot();
 
-// Tab Navigation
-const tabContainer = document.getElementById('tab-container');
-const tabButtons = document.querySelectorAll('.tab-btn');
+// Tab Navigation with animated indicator
+(function() {
+  const tabContainer = document.getElementById('tab-container');
+  const tabBar = document.querySelector('.tab-bar');
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const numTabs = tabButtons.length;
 
-const updateActiveTab = (index) => {
-  tabButtons.forEach((btn, i) => {
-    btn.classList.toggle('active', i === index);
+  if (!tabContainer || !tabBar || numTabs === 0) return;
+
+  // Create the laser indicator
+  const indicator = document.createElement('div');
+  indicator.className = 'tab-indicator';
+  tabBar.appendChild(indicator);
+
+  // Update indicator position based on scroll progress
+  const updateIndicator = () => {
+    const scrollLeft = tabContainer.scrollLeft;
+    const maxScroll = tabContainer.scrollWidth - tabContainer.clientWidth;
+    const progress = maxScroll > 0 ? scrollLeft / maxScroll : 0;
+    const tabWidth = 100 / numTabs;
+    const position = progress * (100 - tabWidth);
+    indicator.style.left = position + '%';
+    indicator.style.width = tabWidth + '%';
+  };
+
+  // Update active tab class
+  const updateActiveTab = (index) => {
+    tabButtons.forEach((btn, i) => {
+      btn.classList.toggle('active', i === index);
+    });
+  };
+
+  // Navigate to tab
+  const goToTab = (index) => {
+    const panelWidth = tabContainer.clientWidth;
+    tabContainer.scrollTo({
+      left: index * panelWidth,
+      behavior: 'smooth'
+    });
+  };
+
+  // Expose globally
+  window.navigateToTab = goToTab;
+
+  // Click handlers for tab buttons
+  tabButtons.forEach((btn, index) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      goToTab(index);
+    });
   });
-};
 
-// Click/tap to navigate tabs - exposed globally for onclick handlers
-window.navigateToTab = (tabIndex) => {
-  const container = document.getElementById('tab-container');
-  if (container) {
-    const panelWidth = container.clientWidth;
-    container.scrollLeft = tabIndex * panelWidth;
-    updateActiveTab(tabIndex);
-  }
-};
-
-// Update active tab on scroll (with scrollend for better detection)
-if (tabContainer) {
-  const handleScrollEnd = () => {
+  // Track scroll for indicator animation
+  tabContainer.addEventListener('scroll', () => {
+    updateIndicator();
+    // Update active class based on closest tab
     const scrollLeft = tabContainer.scrollLeft;
     const panelWidth = tabContainer.clientWidth;
     const activeIndex = Math.round(scrollLeft / panelWidth);
     updateActiveTab(activeIndex);
-  };
+  });
 
-  // Use scrollend if supported, otherwise debounce scroll
-  if ('onscrollend' in window) {
-    tabContainer.addEventListener('scrollend', handleScrollEnd);
-  } else {
-    let scrollTimeout;
-    tabContainer.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(handleScrollEnd, 100);
-    });
-  }
-}
+  // Initial position
+  updateIndicator();
+})();

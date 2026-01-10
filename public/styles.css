@@ -75,7 +75,7 @@ body {
   z-index: 100;
   background: var(--bg);
   border-bottom: 1px solid var(--panel-border);
-  padding: 4px 0;
+  padding: 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -85,18 +85,14 @@ body {
 
 .header-logo-row {
   width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: 0;
+  display: block;
   line-height: 0;
 }
 
 .header-logo {
   width: 100%;
-  max-height: 60px;
   height: auto;
   display: block;
-  object-fit: contain;
 }
 
 .header-right {
@@ -149,7 +145,7 @@ body {
   display: flex;
   background: var(--bg-2);
   border-bottom: 1px solid var(--panel-border);
-  padding: 0 16px;
+  padding: 0;
   flex-shrink: 0;
   position: relative;
   z-index: 50;
@@ -157,7 +153,7 @@ body {
 
 .tab-btn {
   flex: 1;
-  padding: 16px 8px;
+  padding: 14px 8px;
   background: none;
   border: none;
   color: var(--muted);
@@ -168,30 +164,47 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   position: relative;
-  transition: color var(--transition-fast);
-  -webkit-tap-highlight-color: rgba(0, 214, 50, 0.2);
+  transition: color 0.15s ease;
+  -webkit-tap-highlight-color: rgba(0, 214, 50, 0.3);
   touch-action: manipulation;
   user-select: none;
-}
-
-.tab-btn::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
-  background: var(--accent);
-  transition: width var(--transition-normal);
 }
 
 .tab-btn.active {
   color: var(--accent);
 }
 
-.tab-btn.active::after {
-  width: 60%;
+/* Laser Indicator */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  transition: left 0.05s linear;
+  box-shadow:
+    0 0 8px var(--accent),
+    0 0 16px var(--accent),
+    0 0 24px rgba(0, 214, 50, 0.4);
+}
+
+.tab-indicator::before {
+  content: '';
+  position: absolute;
+  inset: -2px -4px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+  filter: blur(4px);
+}
+
+.tab-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 /* Tab Container - Swipeable */
