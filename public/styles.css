@@ -143,16 +143,23 @@ body {
 /* Tab Bar - Fixed Bottom */
 .tab-bar {
   display: flex;
+  flex-wrap: wrap;
   background: var(--bg-2);
   border-top: 1px solid var(--panel-border);
-  padding: 0;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
   flex-shrink: 0;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 100;
+}
+
+/* Safe area spacer below tabs */
+.tab-bar::after {
+  content: '';
+  width: 100%;
+  height: env(safe-area-inset-bottom, 0px);
+  background: var(--bg-2);
 }
 
 .tab-btn {
@@ -178,15 +185,15 @@ body {
   color: var(--accent);
 }
 
-/* Laser Indicator - Top of bottom bar */
+/* Laser Indicator - Below buttons */
 .tab-indicator {
   position: absolute;
-  top: 0;
+  bottom: env(safe-area-inset-bottom, 0px);
   left: 0;
   width: 33.333%;
   height: 3px;
   background: linear-gradient(90deg, transparent, var(--accent), var(--accent), transparent);
-  border-radius: 0 0 3px 3px;
+  border-radius: 3px 3px 0 0;
   transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 0 10px var(--accent),
@@ -209,10 +216,10 @@ body {
 .tab-indicator::after {
   content: '';
   position: absolute;
-  bottom: -1px;
+  top: 0;
   left: 20%;
   right: 20%;
-  height: 2px;
+  height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
   border-radius: 2px;
 }
