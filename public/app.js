@@ -2315,20 +2315,16 @@ const navigateToTab = (tabIndex) => {
 };
 
 tabButtons.forEach(btn => {
-  // Handle click
-  btn.addEventListener('click', (e) => {
+  const handleTabClick = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     const tabIndex = parseInt(btn.dataset.tab, 10);
     navigateToTab(tabIndex);
-  });
+  };
 
-  // Handle touch for mobile
-  btn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    const tabIndex = parseInt(btn.dataset.tab, 10);
-    navigateToTab(tabIndex);
-  });
+  // Use pointerup for unified mouse/touch handling
+  btn.addEventListener('pointerup', handleTabClick);
+  // Fallback for older browsers
+  btn.addEventListener('click', handleTabClick);
 });
 
 // Update active tab on scroll (with scrollend for better detection)
