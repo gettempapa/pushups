@@ -2248,13 +2248,19 @@ if (logTypeMiles) {
 }
 
 
-loadPersistedSummary();
-// Load exercise GIFs first, then data
-loadExerciseGifs().then(() => {
-  loadData().catch(() => {
-    statusEl.textContent = 'Sync failed';
-  });
-});
+// Load exercise GIFs for use next to names
+const loadExerciseGifs = async () => {
+  try {
+    const res = await fetch('/api/exercises');
+    if (!res.ok) return;
+    const { exercises } = await res.json();
+    if (exercises && exercises.length > 0) {
+      exerciseGifs = exercises;
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+};
 
 // Load random mascot in title
 const loadRandomMascot = async () => {
@@ -2275,21 +2281,15 @@ const loadRandomMascot = async () => {
     // Ignore errors
   }
 };
-loadRandomMascot();
 
-// Load exercise GIFs for use next to names
-const loadExerciseGifs = async () => {
-  try {
-    const res = await fetch('/api/exercises');
-    if (!res.ok) return;
-    const { exercises } = await res.json();
-    if (exercises && exercises.length > 0) {
-      exerciseGifs = exercises;
-    }
-  } catch (e) {
-    // Ignore errors
-  }
-};
+loadPersistedSummary();
+// Load exercise GIFs first, then data
+loadExerciseGifs().then(() => {
+  loadData().catch(() => {
+    statusEl.textContent = 'Sync failed';
+  });
+});
+loadRandomMascot();
 
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);
