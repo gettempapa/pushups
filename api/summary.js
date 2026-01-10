@@ -28,12 +28,11 @@ export default async function handler(req, res) {
       .map((s, i) => `${i + 1}. ${s.name}: ${s.value} pushups${s.isDeceased ? ' (inactive 4+ days)' : ''}`)
       .join('\n');
 
-    const prompt = `You're David Goggins giving a 1-2 sentence pushup update. Compliment the leader briefly, then trash anyone falling behind or inactive. Short and punchy. Use their names.
+    const prompt = `Write a detached third-person sports ticker summary of today's pushup standings. 2-3 very short snappy bullet points. No first or second person. Highlight leaders positively, trash anyone failing or inactive. Use names.
 
-Standings:
 ${standingsText}
 
-1-2 sentences MAX. Be brief.`;
+Format: 2-3 bullet points, each under 10 words. Cold, detached, brutally honest.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',

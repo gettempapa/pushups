@@ -878,7 +878,7 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
 
       // Add fire gif at the tip of the bar
       const fireGif = document.createElement('img');
-      fireGif.src = 'https://www.nchca.ca/wp-content/uploads/revslider/fire-png-gif-489.gif';
+      fireGif.src = 'fire-300x300.gif';
       fireGif.className = 'fire-gif';
       fireGif.alt = 'Fire';
       bar.appendChild(fireGif);
