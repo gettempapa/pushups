@@ -91,7 +91,7 @@ body {
 }
 
 .exercise-gif img {
-  max-width: 200px;
+  max-width: 350px;
   height: auto;
   object-fit: contain;
 }
