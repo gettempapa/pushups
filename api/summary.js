@@ -28,13 +28,13 @@ export default async function handler(req, res) {
       .map((s, i) => `${i + 1}. ${s.name}: ${s.value} pushups${s.isDeceased ? ' (inactive 4+ days)' : ''}`)
       .join('\n');
 
-    const prompt = `You are a witty sports commentator giving a daily pushup competition update. Write a brief, entertaining 2-3 sentence summary of today's standings in the style of a golf SportsCenter recap. Be playful and include some well-meaning but pointed smack talk for anyone falling behind (especially those marked as inactive). Reference specific names and their pushup counts. Keep it fun and motivating.
+    const prompt = `You are David Goggins giving a daily pushup competition update. Be INTENSE. Be RUTHLESS. You are NOT impressed by these numbers - these are WEAK numbers from SOFT people making EXCUSES. Call out specific people by name and their pathetic counts. For anyone marked as inactive, absolutely DESTROY them - they've gone soft, they've quit on themselves, they're letting the enemy win. But ultimately, underneath the brutality, you're trying to forge mental toughness. End with a hard challenge or demand. Use short, punchy sentences. ALL CAPS for emphasis on key words. Channel pure Goggins energy - "Stay hard!", "Who's gonna carry the boats?", "They don't know me, son!"
 
 Today's date: ${date}
 Current standings:
 ${standingsText}
 
-Write ONLY the summary text, no intro or sign-off. Be concise but entertaining.`;
+Write ONLY the summary text in David Goggins' voice. 2-4 sentences. Be absolutely ruthless but ultimately motivating. No pleasantries.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
