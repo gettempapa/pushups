@@ -2421,17 +2421,16 @@ requestAnimationFrame(() => {
   };
 
   // Navigate to tab - direct scroll
+  const panels = tabContainer.querySelectorAll('.tab-panel');
   const goToTab = (index) => {
-    const panelWidth = tabContainer.clientWidth;
-    const target = index * panelWidth;
-    // Temporarily disable scroll-snap for programmatic scroll
-    tabContainer.style.scrollSnapType = 'none';
-    tabContainer.scrollLeft = target;
-    // Re-enable scroll-snap after a brief delay
-    setTimeout(() => {
-      tabContainer.style.scrollSnapType = 'x mandatory';
-    }, 50);
+    console.log('goToTab called with index:', index);
     updateActiveTab(index);
+    // Use setTimeout to ensure we're in a clean call stack
+    setTimeout(() => {
+      if (panels[index]) {
+        panels[index].scrollIntoView({ behavior: 'smooth', inline: 'start' });
+      }
+    }, 0);
   };
 
   // Expose globally
@@ -2456,4 +2455,4 @@ requestAnimationFrame(() => {
   // Initial setup
   updateIndicator();
   updateActiveTab(0);
-})();
+});
