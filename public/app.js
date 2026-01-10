@@ -2322,28 +2322,11 @@ initMascot();
     });
   };
 
-  // Navigate to tab with manual animation
+  // Navigate to tab using native scroll
   const goToTab = (index) => {
     const panelWidth = tabContainer.clientWidth;
     const target = index * panelWidth;
-    const start = tabContainer.scrollLeft;
-    const change = target - start;
-    const duration = 250;
-    let startTime = null;
-
-    const animate = (time) => {
-      if (!startTime) startTime = time;
-      const elapsed = time - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease out quad
-      const ease = 1 - (1 - progress) * (1 - progress);
-      tabContainer.scrollLeft = start + change * ease;
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
+    tabContainer.scrollTo({ left: target, behavior: 'smooth' });
     updateActiveTab(index);
   };
 
