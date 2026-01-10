@@ -28,6 +28,39 @@ const animation = {
 
 let charts = [];
 let payloadCache = null;
+
+const getMotivationalMessage = (name, count) => {
+  if (count <= 1) {
+    return `ONE pushup, ${name}? Really? My grandma does more than that getting out of bed. Pathetic.`;
+  } else if (count <= 5) {
+    return `${count} pushups, ${name}? That's not even a warmup. That's embarrassing.`;
+  } else if (count <= 10) {
+    return `${count} pushups... I mean, it's technically exercise I guess. Not impressive though, ${name}.`;
+  } else if (count <= 20) {
+    return `${count} pushups, ${name}. You're making a small dent. Baby steps I suppose.`;
+  } else if (count <= 30) {
+    return `Alright ${name}, ${count} pushups - now we're getting somewhere. Keep it up.`;
+  } else if (count <= 50) {
+    return `FUCK YEAH ${name}!! ${count} pushups, LET'S GOOOO!!!!`;
+  } else if (count <= 75) {
+    return `${name} just dropped ${count} pushups like it's NOTHING. ABSOLUTE BEAST MODE!!!!`;
+  } else if (count <= 100) {
+    return `${count} PUSHUPS?! ${name} IS ON FIRE!!! UNSTOPPABLE FORCE RIGHT HERE!!!!`;
+  } else {
+    return `HOLY SHIT ${name}!!! ${count} PUSHUPS?!?! YOU'RE A GODDAMN MACHINE!!!! LEGENDARY!!!!`;
+  }
+};
+
+const showSuccessToast = (message) => {
+  const toast = document.getElementById('success-toast');
+  const toastMessage = document.getElementById('success-toast-message');
+  if (!toast || !toastMessage) return;
+  toastMessage.textContent = message;
+  toast.classList.add('visible');
+  setTimeout(() => {
+    toast.classList.remove('visible');
+  }, 4000);
+};
 let currentMetric = 'pushups';
 let currentDay = null;
 let currentDayIndex = null;
@@ -1586,6 +1619,8 @@ if (logForm) {
       });
       if (!res.ok) throw new Error('Failed');
       closeLogModal();
+      const message = getMotivationalMessage(name, count);
+      showSuccessToast(message);
       await loadData();
     } catch (error) {
       logStatus.textContent = 'Failed to log pushups.';
