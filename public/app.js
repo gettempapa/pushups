@@ -2175,25 +2175,59 @@ if (milesDial) {
 }
 
 if (dialPlus) {
-  dialPlus.addEventListener('click', () => setDialMiles(dialMiles + 0.5));
+  dialPlus.addEventListener('click', (e) => {
+    e.preventDefault();
+    setDialMiles(dialMiles + 0.5);
+  });
+  dialPlus.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    setDialMiles(dialMiles + 0.5);
+  });
 }
 
 if (dialMinus) {
-  dialMinus.addEventListener('click', () => setDialMiles(dialMiles - 0.5));
+  dialMinus.addEventListener('click', (e) => {
+    e.preventDefault();
+    setDialMiles(dialMiles - 0.5);
+  });
+  dialMinus.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    setDialMiles(dialMiles - 0.5);
+  });
 }
 
 if (dialReset) {
-  dialReset.addEventListener('click', () => {
+  dialReset.addEventListener('click', (e) => {
+    e.preventDefault();
+    dialMiles = 0;
+    updateDialDisplay();
+  });
+  dialReset.addEventListener('touchend', (e) => {
+    e.preventDefault();
     dialMiles = 0;
     updateDialDisplay();
   });
 }
 
 if (logTypePushups) {
-  logTypePushups.addEventListener('click', () => setLogType('pushups'));
+  logTypePushups.addEventListener('click', (e) => {
+    e.preventDefault();
+    setLogType('pushups');
+  });
+  logTypePushups.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    setLogType('pushups');
+  });
 }
 if (logTypeMiles) {
-  logTypeMiles.addEventListener('click', () => setLogType('miles'));
+  logTypeMiles.addEventListener('click', (e) => {
+    e.preventDefault();
+    setLogType('miles');
+  });
+  logTypeMiles.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    setLogType('miles');
+  });
 }
 
 
@@ -2258,15 +2292,29 @@ const updateActiveTab = (index) => {
   });
 };
 
-// Click to navigate tabs
+// Click/tap to navigate tabs
+const navigateToTab = (tabIndex) => {
+  if (tabContainer) {
+    const panelWidth = tabContainer.clientWidth;
+    tabContainer.scrollTo({ left: tabIndex * panelWidth, behavior: 'smooth' });
+    updateActiveTab(tabIndex);
+  }
+};
+
 tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
+  // Handle click
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const tabIndex = parseInt(btn.dataset.tab, 10);
-    if (tabContainer) {
-      const panelWidth = tabContainer.clientWidth;
-      tabContainer.scrollTo({ left: tabIndex * panelWidth, behavior: 'smooth' });
-      updateActiveTab(tabIndex);
-    }
+    navigateToTab(tabIndex);
+  });
+
+  // Handle touch for mobile
+  btn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const tabIndex = parseInt(btn.dataset.tab, 10);
+    navigateToTab(tabIndex);
   });
 });
 
