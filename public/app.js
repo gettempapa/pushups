@@ -855,6 +855,7 @@ const isCoarsePointer = () => window.matchMedia && window.matchMedia('(pointer: 
 const inputHint = () => (isCoarsePointer() ? 'tap' : 'click');
 
 const renderMetricButtons = metrics => {
+  if (!metricToggle) return;
   metricToggle.innerHTML = '';
   if (metrics.length <= 1) {
     metricToggle.style.display = 'none';
@@ -2027,7 +2028,7 @@ const loadData = async () => {
     }
     const res = await fetch('/api/data');
     if (!res.ok) {
-      statusEl.textContent = 'Sync failed: ' + res.status;
+      statusEl.textContent = 'Sync failed';
       return;
     }
     const payload = await res.json();
@@ -2048,7 +2049,7 @@ const loadData = async () => {
     await loadMilesData();
   } catch (err) {
     console.error('loadData error:', err);
-    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.textContent = 'Sync failed';
   }
 };
 
