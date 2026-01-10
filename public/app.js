@@ -2322,23 +2322,30 @@ initMascot();
     });
   };
 
-  // Navigate to tab using native scroll
+  // Navigate to tab using scrollIntoView
+  const panels = tabContainer.querySelectorAll('.tab-panel');
   const goToTab = (index) => {
-    const panelWidth = tabContainer.clientWidth;
-    const target = index * panelWidth;
-    tabContainer.scrollTo({ left: target, behavior: 'smooth' });
+    if (panels[index]) {
+      panels[index].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    }
     updateActiveTab(index);
   };
 
   // Expose globally
   window.navigateToTab = goToTab;
 
-  // Click handlers - use onclick for maximum compatibility
+  // Click and touch handlers for tab buttons
   tabButtons.forEach((btn, index) => {
-    btn.onclick = function(e) {
+    btn.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       goToTab(index);
-    };
+    });
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goToTab(index);
+    });
   });
 
   // Track scroll for indicator
