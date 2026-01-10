@@ -1498,10 +1498,10 @@ h1 {
   100% { transform: scale(1.05); }
 }
 
-/* Report button */
+/* Report button - positioned in bottom padding area */
 .today-bar .report-container {
   position: absolute;
-  bottom: 8px;
+  bottom: 10px;
   right: 12px;
   z-index: 10;
 }
