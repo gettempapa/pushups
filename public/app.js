@@ -2322,28 +2322,26 @@ initMascot();
     });
   };
 
-  // Navigate to tab using scrollIntoView
-  const panels = tabContainer.querySelectorAll('.tab-panel');
+  // Navigate to tab - direct scroll
   const goToTab = (index) => {
-    if (panels[index]) {
-      panels[index].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-    }
+    const panelWidth = tabContainer.clientWidth;
+    const target = index * panelWidth;
+    // Temporarily disable scroll-snap for programmatic scroll
+    tabContainer.style.scrollSnapType = 'none';
+    tabContainer.scrollLeft = target;
+    // Re-enable scroll-snap after a brief delay
+    setTimeout(() => {
+      tabContainer.style.scrollSnapType = 'x mandatory';
+    }, 50);
     updateActiveTab(index);
   };
 
   // Expose globally
   window.navigateToTab = goToTab;
 
-  // Click and touch handlers for tab buttons
+  // Tab button click handlers
   tabButtons.forEach((btn, index) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      goToTab(index);
-    });
-    btn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    btn.addEventListener('click', () => {
       goToTab(index);
     });
   });
