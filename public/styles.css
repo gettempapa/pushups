@@ -1670,6 +1670,7 @@ h1 {
   font-size: 1rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  padding-right: 70px;
 }
 
 .today-bar .value .count-row {
