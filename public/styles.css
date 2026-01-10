@@ -1159,21 +1159,21 @@ h1 {
   width: 24px;
   height: 24px;
   margin-left: 8px;
-  animation: violentShake 0.05s infinite;
+  animation: earthquakeShake 0.15s ease-in-out infinite;
 }
 
 .roaring-guy-large {
   width: 120px;
   height: 120px;
-  animation: violentShake 0.03s infinite;
+  animation: earthquakeShake 0.12s ease-in-out infinite;
 }
 
-@keyframes violentShake {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-3px, 2px) rotate(-2deg); }
-  50% { transform: translate(3px, -2px) rotate(2deg); }
-  75% { transform: translate(-2px, -3px) rotate(-1deg); }
-  100% { transform: translate(2px, 3px) rotate(1deg); }
+@keyframes earthquakeShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-2px, 1px) rotate(-1deg); }
+  40% { transform: translate(2px, -1px) rotate(1deg); }
+  60% { transform: translate(-1px, 2px) rotate(-0.5deg); }
+  80% { transform: translate(1px, -2px) rotate(0.5deg); }
 }
 
 .today-bar .trophy {
