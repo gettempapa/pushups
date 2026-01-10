@@ -1067,7 +1067,6 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
 
     reportContainer.appendChild(reportBtn);
     reportContainer.appendChild(reportMenu);
-    name.appendChild(reportContainer);
 
     if (item.isDeceased) {
       const deceased = document.createElement('span');
@@ -1163,6 +1162,7 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     wrapper.appendChild(name);
     wrapper.appendChild(track);
     wrapper.appendChild(value);
+    wrapper.appendChild(reportContainer);
     todayBars.appendChild(wrapper);
   });
 };
@@ -2427,15 +2427,21 @@ setInterval(updateDeadlineClock, 50);
 initMascot();
 
 // Tab Navigation with animated indicator
+console.log('Tab navigation script starting...');
 requestAnimationFrame(() => {
+  console.log('requestAnimationFrame callback running');
   const tabContainer = document.getElementById('tab-container');
   const tabBar = document.querySelector('.tab-bar');
   const tabButtons = document.querySelectorAll('.tab-btn');
   const numTabs = tabButtons.length;
 
-  if (!tabContainer || !tabBar || numTabs === 0) return;
+  console.log('Elements found:', { tabContainer: !!tabContainer, tabBar: !!tabBar, numTabs });
 
-  // Debug: log container width
+  if (!tabContainer || !tabBar || numTabs === 0) {
+    console.log('Early return - missing elements');
+    return;
+  }
+
   console.log('Tab container width:', tabContainer.clientWidth);
 
   // Create the laser indicator
@@ -2477,14 +2483,17 @@ requestAnimationFrame(() => {
   window.navigateToTab = goToTab;
 
   // Tab button click/touch handlers
+  console.log('Setting up tab button handlers...');
   let lastTap = 0;
   tabButtons.forEach((btn, index) => {
+    console.log('Attaching to button', index, btn.textContent);
     btn.addEventListener('click', (e) => {
+      console.log('CLICK on tab', index);
       e.preventDefault();
       goToTab(index);
     });
     btn.addEventListener('touchstart', (e) => {
-      // Prevent double-firing with click
+      console.log('TOUCHSTART on tab', index);
       const now = Date.now();
       if (now - lastTap < 300) return;
       lastTap = now;
@@ -2492,6 +2501,7 @@ requestAnimationFrame(() => {
       goToTab(index);
     }, { passive: false });
   });
+  console.log('Tab handlers attached!');
 
   // Track scroll for indicator
   tabContainer.addEventListener('scroll', () => {
