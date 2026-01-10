@@ -18,6 +18,8 @@ const logStatus = document.getElementById('log-status');
 const logClose = document.getElementById('log-close');
 const logExisting = document.getElementById('log-existing');
 const logExistingText = document.getElementById('log-existing-text');
+const dailySummary = document.getElementById('daily-summary');
+const dailySummaryText = document.getElementById('daily-summary-text');
 
 const animation = {
   start: null,
@@ -61,6 +63,69 @@ const showSuccessToast = (message) => {
     toast.classList.remove('visible');
   }, 4000);
 };
+
+const generateDailySummary = async (series, targetDate) => {
+  if (!dailySummary || !dailySummaryText) return;
+
+  const todayIso = targetDate || getLocalIsoDate();
+
+  // Build standings for today
+  const standings = series.map(s => {
+    const todayPoint = s.points.find(p => p.date === todayIso);
+    const value = todayPoint?.value ?? 0;
+
+    // Check if deceased (4+ days inactive)
+    const datesWithActivity = s.points.filter(p => p.value > 0).map(p => p.date).sort();
+    const lastActiveDate = datesWithActivity.length > 0 ? datesWithActivity[datesWithActivity.length - 1] : null;
+    let isDeceased = false;
+    if (lastActiveDate) {
+      const lastDate = new Date(`${lastActiveDate}T00:00:00`);
+      const today = new Date(`${todayIso}T00:00:00`);
+      const daysSinceActive = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+      isDeceased = daysSinceActive >= 4;
+    }
+
+    return { name: s.name, value, isDeceased };
+  });
+
+  try {
+    const res = await fetch('/api/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ standings, date: todayIso })
+    });
+
+    if (!res.ok) throw new Error('Failed to generate summary');
+
+    const { summary } = await res.json();
+    dailySummaryText.textContent = summary;
+    dailySummary.style.display = 'block';
+
+    // Persist to localStorage
+    localStorage.setItem('dailySummary', JSON.stringify({ summary, date: todayIso, timestamp: Date.now() }));
+  } catch (error) {
+    console.error('Failed to generate summary:', error);
+  }
+};
+
+const loadPersistedSummary = () => {
+  if (!dailySummary || !dailySummaryText) return;
+
+  const stored = localStorage.getItem('dailySummary');
+  if (!stored) return;
+
+  try {
+    const { summary, date, timestamp } = JSON.parse(stored);
+    // Show the summary if it exists
+    if (summary) {
+      dailySummaryText.textContent = summary;
+      dailySummary.style.display = 'block';
+    }
+  } catch (e) {
+    // Ignore parse errors
+  }
+};
+
 let currentMetric = 'pushups';
 let currentDay = null;
 let currentDayIndex = null;
@@ -1654,6 +1719,10 @@ if (logForm) {
         }
         closeLogModal();
         showSuccessToast(`Uh oh, time to check your pushup privilege! Katie Wilson has redistributed this batch of ${count} pushups fairly to all competitors.`);
+        await loadData();
+        const updatedSeries = getSeriesForMetric('pushups');
+        generateDailySummary(updatedSeries, date);
+        return;
       } else {
         const res = await fetch('/api/log', {
           method: 'POST',
@@ -1666,6 +1735,9 @@ if (logForm) {
         showSuccessToast(message);
       }
       await loadData();
+      // Generate a new daily summary after logging pushups
+      const updatedSeries = getSeriesForMetric('pushups');
+      generateDailySummary(updatedSeries, date);
     } catch (error) {
       logStatus.textContent = 'Failed to log pushups.';
     }
@@ -1708,6 +1780,7 @@ dayFilter.addEventListener('change', event => {
 });
 
 
+loadPersistedSummary();
 loadData().catch(() => {
   statusEl.textContent = 'Sync failed';
 });

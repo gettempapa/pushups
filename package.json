@@ -8,6 +8,7 @@
     "backfill": "node backfill.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "googleapis": "^144.0.0"
