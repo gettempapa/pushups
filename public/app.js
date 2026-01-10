@@ -20,6 +20,16 @@ const logExisting = document.getElementById('log-existing');
 const logExistingText = document.getElementById('log-existing-text');
 const dailySummary = document.getElementById('daily-summary');
 const dailySummaryText = document.getElementById('daily-summary-text');
+const milesSection = document.getElementById('miles-section');
+const milesBars = document.getElementById('miles-bars');
+const logTitle = document.getElementById('log-title');
+const logCountText = document.getElementById('log-count-text');
+const logTypePushups = document.getElementById('log-type-pushups');
+const logTypeMiles = document.getElementById('log-type-miles');
+
+let currentLogType = 'pushups';
+let milesPayloadCache = null;
+let distanceExamples = null;
 
 const animation = {
   start: null,
@@ -1721,6 +1731,32 @@ if (logForm) {
     const name = logName.value.trim();
     const date = logDate.value;
     const count = Number(logCount.value);
+
+    if (currentLogType === 'miles') {
+      // Handle miles logging
+      if (!name || !date || !Number.isFinite(count)) {
+        logStatus.textContent = 'Enter a name, date, and miles.';
+        return;
+      }
+
+      logStatus.textContent = 'Saving...';
+      try {
+        const res = await fetch('/api/log-miles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, date, miles: count, mode: 'add' })
+        });
+        if (!res.ok) throw new Error('Failed');
+        closeLogModal();
+        showSuccessToast(`${name} logged ${count.toFixed(1)} miles! Keep moving!`);
+        await loadData();
+      } catch (error) {
+        logStatus.textContent = 'Failed to log miles.';
+      }
+      return;
+    }
+
+    // Handle pushups logging
     if (!name || !date || !Number.isFinite(count)) {
       logStatus.textContent = 'Enter a name, date, and pushup count.';
       return;
@@ -1793,6 +1829,180 @@ if (logForm) {
   });
 }
 
+// Miles tracker functions
+const loadDistanceExamples = async () => {
+  if (distanceExamples) return distanceExamples;
+  try {
+    const res = await fetch('/distance_examples.json');
+    if (!res.ok) return null;
+    distanceExamples = await res.json();
+    return distanceExamples;
+  } catch (e) {
+    return null;
+  }
+};
+
+const getDistanceEquivalent = (miles) => {
+  if (!distanceExamples || miles <= 0) return null;
+  // Find closest distance key
+  const keys = Object.keys(distanceExamples).map(Number).sort((a, b) => a - b);
+  let closest = keys[0];
+  for (const key of keys) {
+    if (Math.abs(key - miles) < Math.abs(closest - miles)) {
+      closest = key;
+    }
+  }
+  const examples = distanceExamples[closest.toFixed(1)];
+  if (!examples || !examples.length) return null;
+  // Pick a random example
+  return examples[Math.floor(Math.random() * examples.length)];
+};
+
+const milesColorForValue = value => {
+  const milesGoal = 10;
+  const ratio = Math.min(Math.max(value / milesGoal, 0), 1);
+  const start = [100, 116, 139];  // Slate
+  const mid = [251, 191, 36];     // Amber/Gold
+  const end = [34, 197, 94];      // Green
+  const midPoint = 0.7;
+  if (ratio < midPoint) {
+    const t = ratio / midPoint;
+    const r = Math.round(lerp(start[0], mid[0], t));
+    const g = Math.round(lerp(start[1], mid[1], t));
+    const b = Math.round(lerp(start[2], mid[2], t));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  const t = (ratio - midPoint) / (1 - midPoint);
+  const r = Math.round(lerp(mid[0], end[0], t));
+  const g = Math.round(lerp(mid[1], end[1], t));
+  const b = Math.round(lerp(mid[2], end[2], t));
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+const renderMilesBars = (milesSeries, selectedDay, dates) => {
+  if (!milesBars) return;
+  milesBars.innerHTML = '';
+  if (!milesSeries.length) return;
+
+  const milesGoal = 10;
+  const targetDay = selectedDay || dates[dates.length - 1];
+
+  const latestValues = milesSeries.map(series => {
+    const byDate = new Map(series.points.map(point => [point.date, point.value]));
+    return {
+      name: series.name,
+      value: byDate.get(targetDay) ?? 0
+    };
+  });
+
+  latestValues.sort((a, b) => b.value - a.value);
+
+  const maxValue = Math.max(milesGoal, ...latestValues.map(item => item.value));
+  const scaleMax = Math.max(maxValue, milesGoal * 1.2);
+  const winnerValue = Math.max(...latestValues.map(item => item.value));
+
+  latestValues.forEach(item => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'today-bar miles-bar';
+
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = item.name;
+
+    // Add running shoes for people with > 0 miles (flipped horizontally)
+    if (item.value > 0) {
+      const shoes = document.createElement('img');
+      shoes.src = 'running_shoes.gif';
+      shoes.className = 'running-shoes-icon';
+      shoes.alt = '';
+      name.appendChild(shoes);
+    }
+
+    const track = document.createElement('div');
+    track.className = 'bar-track';
+
+    const goalLine = document.createElement('div');
+    goalLine.className = 'goal-line';
+    const goalPercent = Math.min(100, (milesGoal / scaleMax) * 100);
+    goalLine.style.left = `${goalPercent}%`;
+    const goalLabel = document.createElement('div');
+    goalLabel.className = 'goal-label';
+    goalLabel.textContent = '10';
+    goalLabel.style.left = `${goalPercent}%`;
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const widthPercent = Math.min(100, Math.max(4, (item.value / scaleMax) * 100));
+    bar.style.width = `${widthPercent}%`;
+    bar.style.background = milesColorForValue(item.value);
+
+    const value = document.createElement('div');
+    value.className = 'value';
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = item.value.toFixed(1);
+    const unit = document.createElement('span');
+    unit.className = 'unit';
+    unit.textContent = 'miles';
+    value.appendChild(count);
+    value.appendChild(unit);
+
+    if (item.value === winnerValue && winnerValue > 0) {
+      const trophy = document.createElement('div');
+      trophy.className = 'trophy';
+      trophy.textContent = '🏆';
+      name.appendChild(trophy);
+    }
+
+    // Add distance equivalent
+    if (item.value > 0) {
+      const equivalent = getDistanceEquivalent(item.value);
+      if (equivalent) {
+        const equivEl = document.createElement('div');
+        equivEl.className = 'distance-equivalent';
+        equivEl.textContent = `≈ ${equivalent}`;
+        value.appendChild(equivEl);
+      }
+    }
+
+    track.appendChild(goalLine);
+    track.appendChild(goalLabel);
+    track.appendChild(bar);
+
+    wrapper.appendChild(name);
+    wrapper.appendChild(track);
+    wrapper.appendChild(value);
+    milesBars.appendChild(wrapper);
+  });
+};
+
+const loadMilesData = async () => {
+  try {
+    const res = await fetch('/api/miles');
+    if (!res.ok) return;
+    const payload = await res.json();
+    if (!payload.enabled) return;
+
+    milesPayloadCache = payload;
+    if (milesSection) {
+      milesSection.style.display = 'block';
+    }
+
+    // Render miles bars for current day
+    const todayIso = currentDay || getLocalIsoDate();
+    if (payload.series?.length) {
+      renderMilesBars(payload.series, todayIso, payload.dates || []);
+    }
+  } catch (e) {
+    // Ignore errors - miles feature optional
+  }
+};
+
+const getMilesSeriesForDate = (date) => {
+  if (!milesPayloadCache) return [];
+  return milesPayloadCache.series || [];
+};
+
 const loadData = async () => {
   statusEl.textContent = 'Syncing...';
   if (latestUpdate) {
@@ -1815,6 +2025,10 @@ const loadData = async () => {
   renderMetricButtons(metrics);
   populateLogNames(getSeriesForMetric('pushups'));
   renderBoard(currentMetric);
+
+  // Load miles data
+  await loadDistanceExamples();
+  await loadMilesData();
 };
 
 dayFilter.addEventListener('change', event => {
@@ -1826,7 +2040,35 @@ dayFilter.addEventListener('change', event => {
   if (dailyCache.series.length) {
     renderTodayBars(dailyCache.series, currentMetric, currentDay, dailyCache.dates);
   }
+  // Also update miles for selected day
+  if (milesPayloadCache?.series?.length) {
+    renderMilesBars(milesPayloadCache.series, currentDay, milesPayloadCache.dates || []);
+  }
 });
+
+// Log type toggle
+const setLogType = (type) => {
+  currentLogType = type;
+  if (logTypePushups) logTypePushups.classList.toggle('active', type === 'pushups');
+  if (logTypeMiles) logTypeMiles.classList.toggle('active', type === 'miles');
+  if (logTitle) logTitle.textContent = type === 'pushups' ? 'LOG PUSHUP(S)' : 'LOG MILES';
+  if (logCountText) logCountText.textContent = type === 'pushups' ? 'Pushups' : 'Miles';
+  if (logCount) {
+    logCount.step = type === 'pushups' ? '1' : '0.1';
+    logCount.value = '';
+  }
+  if (logExisting) {
+    logExisting.setAttribute('aria-hidden', 'true');
+    logExisting.classList.remove('visible');
+  }
+};
+
+if (logTypePushups) {
+  logTypePushups.addEventListener('click', () => setLogType('pushups'));
+}
+if (logTypeMiles) {
+  logTypeMiles.addEventListener('click', () => setLogType('miles'));
+}
 
 
 loadPersistedSummary();
@@ -1834,9 +2076,9 @@ loadData().catch(() => {
   statusEl.textContent = 'Sync failed';
 });
 
-// Load random mascot
+// Load random mascot in title
 const loadRandomMascot = async () => {
-  const container = document.getElementById('random-mascot');
+  const container = document.getElementById('title-mascot');
   if (!container) return;
   try {
     const res = await fetch('/api/mascots');

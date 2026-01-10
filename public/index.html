@@ -8,11 +8,9 @@
   </head>
   <body class="jetbrains_mono">
     <main class="page">
-      <div id="random-mascot" class="random-mascot"></div>
-
       <header class="hero">
         <div class="hero-text">
-          <h1>PUSHUP ACCOUNTABILITY TRACKER</h1>
+          <h1><span id="title-mascot" class="title-mascot"></span>PUSHUP ACCOUNTABILITY TRACKER</h1>
           <p class="hero-sub blood-red">DAILY MINIMUM: 100 PUSHUPS.</p>
         </div>
         <div class="hero-actions">
@@ -53,6 +51,14 @@
         <div id="today-bars" class="today-bars"></div>
       </section>
 
+      <section id="miles-section" class="today miles-section" style="display: none;">
+        <div class="today-header">
+          <h2>DAILY MILES</h2>
+          <p class="section-sub">DAILY GOAL: 10 MILES</p>
+        </div>
+        <div id="miles-bars" class="today-bars miles-bars"></div>
+      </section>
+
       <section class="stats">
         <div class="stats-header">
           <h2>SATISFACTORY VS PATHETIC DAYS</h2>
@@ -86,12 +92,16 @@
       </footer>
     </main>
 
-    <button id="log-fab" class="log-fab" type="button">LOG PUSHUP(S)</button>
+    <button id="log-fab" class="log-fab" type="button">LOG ACTIVITY</button>
     <div id="log-modal" class="log-modal" aria-hidden="true">
       <div class="log-card">
         <div class="log-header">
-          <h3>LOG PUSHUP(S)</h3>
+          <h3 id="log-title">LOG PUSHUP(S)</h3>
           <button id="log-close" class="log-close" type="button">✕</button>
+        </div>
+        <div class="log-type-toggle">
+          <button type="button" id="log-type-pushups" class="log-type-btn active">Pushups</button>
+          <button type="button" id="log-type-miles" class="log-type-btn">Miles</button>
         </div>
         <form id="log-form" class="log-form">
           <label>
@@ -102,8 +112,8 @@
             <span>Date</span>
             <input id="log-date" type="date" required />
           </label>
-          <label>
-            <span>Pushups</span>
+          <label id="log-count-label">
+            <span id="log-count-text">Pushups</span>
             <input id="log-count" type="number" min="0" step="1" required />
           </label>
           <div id="log-existing" class="log-existing" aria-hidden="true">

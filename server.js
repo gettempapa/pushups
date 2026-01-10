@@ -16,9 +16,14 @@ const port = process.env.PORT || 3456;
 const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(__dirname, 'pushups-483221-9a37d8039be6.json');
 const sheetId = process.env.SHEET_ID ? process.env.SHEET_ID.trim() : undefined;
 const sheetName = process.env.SHEET_NAME ? process.env.SHEET_NAME.trim() : 'Sheet1';
+const milesSheetId = process.env.MILES_SHEET_ID ? process.env.MILES_SHEET_ID.trim() : undefined;
+const milesSheetName = process.env.MILES_SHEET_NAME ? process.env.MILES_SHEET_NAME.trim() : 'Sheet1';
 
 if (!sheetId) {
   console.warn('Missing SHEET_ID in environment. Set SHEET_ID in .env or your shell.');
+}
+if (!milesSheetId) {
+  console.warn('Missing MILES_SHEET_ID in environment. Miles tracking will be disabled.');
 }
 
 const getAuth = () => {

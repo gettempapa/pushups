@@ -73,16 +73,17 @@ body {
   box-sizing: border-box;
 }
 
-.random-mascot {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
+.title-mascot {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
 }
 
-.random-mascot img {
-  width: 120px;
-  height: auto;
-  border-radius: var(--radius-lg);
+.title-mascot img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  vertical-align: middle;
 }
 
 .warning-banner {
@@ -851,6 +852,28 @@ h1 {
   flex-wrap: wrap;
 }
 
+.section-sub {
+  margin: 4px 0 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.miles-section {
+  margin-top: 24px;
+}
+
+.distance-equivalent {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 4px;
+  max-width: 200px;
+  line-height: 1.3;
+}
+
 .today-sub {
   margin: 0;
   color: var(--muted);
@@ -1144,6 +1167,13 @@ h1 {
   height: 48px;
   margin-left: 8px;
   animation: subtleShake 0.3s ease-in-out infinite;
+}
+
+.running-shoes-icon {
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
+  transform: scaleX(-1);
 }
 
 .roaring-guy-large {
@@ -1571,6 +1601,38 @@ canvas {
   color: var(--text);
 }
 
+.log-type-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.log-type-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.log-type-btn:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+
+.log-type-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+}
+
 .log-form {
   display: grid;
   gap: 16px;
@@ -1677,7 +1739,7 @@ canvas {
   bottom: 16px;
   width: min(140px, 35vw);
   height: auto;
-  z-index: 70;
+  z-index: 95;
   pointer-events: none;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4));
 }
