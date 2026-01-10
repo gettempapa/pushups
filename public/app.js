@@ -57,6 +57,27 @@ const setSuspectedUser = (name, isSuspected) => {
   }
   localStorage.setItem('suspectedUsers', JSON.stringify(suspected));
 };
+
+// Stolen valor accusations tracking
+const getStolenValorUsers = () => {
+  try {
+    return JSON.parse(localStorage.getItem('stolenValorUsers') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const setStolenValorUser = (name, isAccused) => {
+  const accused = getStolenValorUsers();
+  if (isAccused && !accused.includes(name)) {
+    accused.push(name);
+  } else if (!isAccused) {
+    const idx = accused.indexOf(name);
+    if (idx !== -1) accused.splice(idx, 1);
+  }
+  localStorage.setItem('stolenValorUsers', JSON.stringify(accused));
+};
+
 let dialDragging = false;
 const DIAL_MAX_MILES = 15;
 const DIAL_CIRCUMFERENCE = 326.73; // 2 * PI * 52
@@ -947,16 +968,18 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     name.className = 'name';
     name.textContent = item.name;
 
-    // Check if user is suspected of inflated numbers
+    // Check if user is suspected or accused of stolen valor
     const suspectedUsers = getSuspectedUsers();
+    const stolenValorUsers = getStolenValorUsers();
     const isSuspected = suspectedUsers.includes(item.name);
+    const isStolenValor = stolenValorUsers.includes(item.name);
 
-    // Create image element (will be swapped if suspected)
+    // Create image element (will be swapped if suspected or stolen valor)
     const personImg = document.createElement('img');
     personImg.alt = '';
 
-    if (isSuspected) {
-      // Show pinocchio for suspected users
+    if (isSuspected || isStolenValor) {
+      // Show pinocchio for suspected/stolen valor users
       personImg.src = 'pinnochio.gif';
       personImg.className = 'exercise-guy-small pinocchio';
       name.appendChild(personImg);
@@ -978,22 +1001,48 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
       name.appendChild(personImg);
     }
 
-    // Suspected checkbox
-    const suspectedLabel = document.createElement('label');
-    suspectedLabel.className = 'suspected-label';
-    const suspectedCheckbox = document.createElement('input');
-    suspectedCheckbox.type = 'checkbox';
-    suspectedCheckbox.className = 'suspected-checkbox';
-    suspectedCheckbox.checked = isSuspected;
-    suspectedCheckbox.addEventListener('change', (e) => {
+    // Suspected checkbox - only show for Addis
+    if (item.name.toLowerCase() === 'addis') {
+      const suspectedLabel = document.createElement('label');
+      suspectedLabel.className = 'suspected-label';
+      const suspectedCheckbox = document.createElement('input');
+      suspectedCheckbox.type = 'checkbox';
+      suspectedCheckbox.className = 'suspected-checkbox';
+      suspectedCheckbox.checked = isSuspected;
+      suspectedCheckbox.addEventListener('change', (e) => {
+        e.stopPropagation();
+        setSuspectedUser(item.name, e.target.checked);
+        // Re-render to update images
+        renderTodayBars(metricSeries, metric, selectedDay, dates);
+      });
+      suspectedLabel.appendChild(suspectedCheckbox);
+      suspectedLabel.appendChild(document.createTextNode(' SUSPECTED OF INFLATED NUMBERS'));
+      name.appendChild(suspectedLabel);
+    }
+
+    // Stolen Valor button
+    const valorBtn = document.createElement('button');
+    valorBtn.type = 'button';
+    valorBtn.className = 'stolen-valor-btn' + (isStolenValor ? ' accused' : '');
+    valorBtn.textContent = isStolenValor ? '⚠️ ACCUSED OF STOLEN VALOR' : 'Accuse of Stolen Valor';
+    valorBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      setSuspectedUser(item.name, e.target.checked);
-      // Re-render to update images
-      renderTodayBars(metricSeries, metric, selectedDay, dates);
+      if (isStolenValor) {
+        // Already accused - clicking removes the accusation
+        setStolenValorUser(item.name, false);
+        renderTodayBars(metricSeries, metric, selectedDay, dates);
+      } else {
+        // Show confirmation dialog
+        const confirmed = confirm(
+          `⚠️ WARNING ⚠️\n\nYou are about to accuse ${item.name} of STOLEN VALOR.\n\nThis is an EXTREMELY SERIOUS charge.\n\nAre you absolutely sure you want to proceed?`
+        );
+        if (confirmed) {
+          setStolenValorUser(item.name, true);
+          renderTodayBars(metricSeries, metric, selectedDay, dates);
+        }
+      }
     });
-    suspectedLabel.appendChild(suspectedCheckbox);
-    suspectedLabel.appendChild(document.createTextNode(' SUSPECTED OF INFLATED NUMBERS'));
-    name.appendChild(suspectedLabel);
+    name.appendChild(valorBtn);
 
     if (item.isDeceased) {
       const deceased = document.createElement('span');
@@ -2337,13 +2386,16 @@ setInterval(updateDeadlineClock, 50);
 initMascot();
 
 // Tab Navigation with animated indicator
-(function() {
+requestAnimationFrame(() => {
   const tabContainer = document.getElementById('tab-container');
   const tabBar = document.querySelector('.tab-bar');
   const tabButtons = document.querySelectorAll('.tab-btn');
   const numTabs = tabButtons.length;
 
   if (!tabContainer || !tabBar || numTabs === 0) return;
+
+  // Debug: log container width
+  console.log('Tab container width:', tabContainer.clientWidth);
 
   // Create the laser indicator
   const indicator = document.createElement('div');
