@@ -2305,27 +2305,14 @@ const updateActiveTab = (index) => {
   });
 };
 
-// Click/tap to navigate tabs
-const navigateToTab = (tabIndex) => {
+// Click/tap to navigate tabs - exposed globally for onclick handlers
+window.navigateToTab = (tabIndex) => {
   if (tabContainer) {
     const panelWidth = tabContainer.clientWidth;
     tabContainer.scrollTo({ left: tabIndex * panelWidth, behavior: 'smooth' });
     updateActiveTab(tabIndex);
   }
 };
-
-tabButtons.forEach(btn => {
-  const handleTabClick = (e) => {
-    e.preventDefault();
-    const tabIndex = parseInt(btn.dataset.tab, 10);
-    navigateToTab(tabIndex);
-  };
-
-  // Use pointerup for unified mouse/touch handling
-  btn.addEventListener('pointerup', handleTabClick);
-  // Fallback for older browsers
-  btn.addEventListener('click', handleTabClick);
-});
 
 // Update active tab on scroll (with scrollend for better detection)
 if (tabContainer) {
