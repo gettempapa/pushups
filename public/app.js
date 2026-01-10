@@ -876,25 +876,17 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
       wrapper.style.setProperty('--shake', intensity.toFixed(2));
       bar.style.setProperty('--over', Math.min(1, (item.value - goal) / 50).toFixed(2));
 
-      // Add flame particles
-      const flameContainer = document.createElement('div');
-      flameContainer.className = 'flame-container';
-      for (let i = 0; i < 5; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'flame-particle';
-        flameContainer.appendChild(particle);
-      }
-      bar.appendChild(flameContainer);
+      // Add fire gif at the tip of the bar
+      const fireGif = document.createElement('img');
+      fireGif.src = 'https://www.nchca.ca/wp-content/uploads/revslider/fire-png-gif-489.gif';
+      fireGif.className = 'fire-gif';
+      fireGif.alt = 'Fire';
+      bar.appendChild(fireGif);
 
       // Add glow effect
       const glow = document.createElement('div');
       glow.className = 'flame-glow';
       bar.appendChild(glow);
-
-      // Add heat wave
-      const heatWave = document.createElement('div');
-      heatWave.className = 'heat-wave';
-      bar.appendChild(heatWave);
     }
 
     const value = document.createElement('div');

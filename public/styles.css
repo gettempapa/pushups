@@ -241,6 +241,12 @@ h1 {
   font-weight: 400;
 }
 
+.hero-sub.blood-red {
+  color: #dc2626;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+}
+
 .hero-actions {
   display: flex;
   align-items: center;
@@ -1001,6 +1007,18 @@ h1 {
 }
 
 /* Glowing ember effect */
+.fire-gif {
+  position: absolute;
+  right: -25px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 10;
+}
+
 .flame-glow {
   position: absolute;
   right: -30px;
