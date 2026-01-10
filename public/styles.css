@@ -1608,7 +1608,8 @@ h1 {
 
 /* Accused descriptor style */
 .today-bar .adjective.accused {
-  color: var(--danger);
+  color: #ff3b30 !important;
+  font-weight: 700;
 }
 
 .roaring-guy-small {
