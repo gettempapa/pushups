@@ -38,6 +38,7 @@ const dialMinus = document.getElementById('dial-minus');
 let currentLogType = 'pushups';
 let milesPayloadCache = null;
 let distanceExamples = null;
+let exerciseGifs = [];
 let dialMiles = 0;
 let dialDragging = false;
 const DIAL_MAX_MILES = 15;
@@ -929,11 +930,27 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     name.className = 'name';
     name.textContent = item.name;
     if (item.value > goal) {
+      // 100+ pushups: roaring guy (vibrating)
       const roaring = document.createElement('img');
       roaring.src = 'roaring_guy.png';
       roaring.className = 'roaring-guy-small';
       roaring.alt = '';
       name.appendChild(roaring);
+    } else if (item.value >= 80) {
+      // 80-99 pushups: pushup guy (not vibrating)
+      const pushupGuy = document.createElement('img');
+      pushupGuy.src = 'pushup_guy.gif';
+      pushupGuy.className = 'exercise-guy-small';
+      pushupGuy.alt = '';
+      name.appendChild(pushupGuy);
+    } else if (item.value > 0 && exerciseGifs && exerciseGifs.length > 0) {
+      // 1-79 pushups: random exercise GIF (not vibrating)
+      const exerciseImg = document.createElement('img');
+      const randomGif = exerciseGifs[Math.floor(Math.random() * exerciseGifs.length)];
+      exerciseImg.src = randomGif;
+      exerciseImg.className = 'exercise-guy-small';
+      exerciseImg.alt = '';
+      name.appendChild(exerciseImg);
     }
     if (item.isDeceased) {
       const deceased = document.createElement('span');
@@ -2232,8 +2249,11 @@ if (logTypeMiles) {
 
 
 loadPersistedSummary();
-loadData().catch(() => {
-  statusEl.textContent = 'Sync failed';
+// Load exercise GIFs first, then data
+loadExerciseGifs().then(() => {
+  loadData().catch(() => {
+    statusEl.textContent = 'Sync failed';
+  });
 });
 
 // Load random mascot in title
@@ -2257,26 +2277,19 @@ const loadRandomMascot = async () => {
 };
 loadRandomMascot();
 
-// Load random exercise GIF under DAILY MINIMUM
-const loadRandomExercise = async () => {
-  const container = document.getElementById('exercise-gif');
-  if (!container) return;
+// Load exercise GIFs for use next to names
+const loadExerciseGifs = async () => {
   try {
     const res = await fetch('/api/exercises');
     if (!res.ok) return;
     const { exercises } = await res.json();
     if (exercises && exercises.length > 0) {
-      const random = exercises[Math.floor(Math.random() * exercises.length)];
-      const img = document.createElement('img');
-      img.src = random;
-      img.alt = 'Exercise demonstration';
-      container.appendChild(img);
+      exerciseGifs = exercises;
     }
   } catch (e) {
     // Ignore errors
   }
 };
-loadRandomExercise();
 
 updateDeadlineClock();
 setInterval(updateDeadlineClock, 50);

@@ -4,3 +4,7 @@ node_modules
 server.log
 pushups-483221-9a37d8039be6.json
 .venv
+.env*.local
+Flow-v1.4.154.dmg
+*.mp4
+pushup_guy.mp4
