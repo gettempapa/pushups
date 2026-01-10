@@ -968,18 +968,16 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     name.className = 'name';
     name.textContent = item.name;
 
-    // Check if user is suspected or accused of stolen valor
-    const suspectedUsers = getSuspectedUsers();
+    // Check if user is accused of stolen valor
     const stolenValorUsers = getStolenValorUsers();
-    const isSuspected = suspectedUsers.includes(item.name);
     const isStolenValor = stolenValorUsers.includes(item.name);
 
-    // Create image element (will be swapped if suspected or stolen valor)
+    // Create image element (will be swapped if stolen valor)
     const personImg = document.createElement('img');
     personImg.alt = '';
 
-    if (isSuspected || isStolenValor) {
-      // Show pinocchio for suspected/stolen valor users
+    if (isStolenValor) {
+      // Show pinocchio for stolen valor users
       personImg.src = 'pinnochio.gif';
       personImg.className = 'exercise-guy-small pinocchio';
       name.appendChild(personImg);
@@ -1099,13 +1097,10 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
 
     if (metric === 'pushups') {
       const adjective = document.createElement('span');
-      // Show accusation as descriptor if accused
+      // Show accusation as descriptor if accused of stolen valor
       if (isStolenValor) {
         adjective.className = 'adjective accused';
-        adjective.textContent = 'STOLEN VALOR';
-      } else if (isSuspected) {
-        adjective.className = 'adjective accused';
-        adjective.textContent = 'SUSPECTED OF INFLATED NUMBERS';
+        adjective.textContent = 'ACCUSED OF STOLEN VALOR';
       } else {
         const statusClass = statusClassForValue(item.value);
         const modifier = statusClass.split(' ')[1] || 'neutral';

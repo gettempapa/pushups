@@ -1486,10 +1486,10 @@ h1 {
   100% { transform: scale(1.05); }
 }
 
-/* Report button and dropdown */
+/* Report button */
 .today-bar .report-container {
   position: absolute;
-  bottom: 8px;
+  top: 8px;
   right: 8px;
 }
 
@@ -1505,7 +1505,7 @@ h1 {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .today-bar:hover .report-btn {
@@ -1517,57 +1517,9 @@ h1 {
   color: var(--danger);
 }
 
-.today-bar .report-menu {
-  display: none;
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  margin-bottom: 4px;
-  background: var(--bg-2);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius-sm);
-  padding: 8px;
-  z-index: 100;
-  min-width: 200px;
-  box-shadow: var(--shadow-lg);
-}
-
-.today-bar .report-menu.open {
-  display: block;
-}
-
-.today-bar .report-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 4px;
-  font-size: 0.7rem;
-  color: var(--text-2);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background var(--transition-fast);
-}
-
-.today-bar .report-option:hover {
-  background: var(--bg-3);
-}
-
-.today-bar .report-option input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--danger);
-  cursor: pointer;
-}
-
 /* Accused descriptor style */
 .today-bar .adjective.accused {
   color: var(--danger);
-  animation: accusedPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes accusedPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
 }
 
 .roaring-guy-small {
