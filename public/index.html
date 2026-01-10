@@ -118,13 +118,18 @@
             <input id="log-count" type="number" min="0" step="1" required />
           </label>
           <div id="miles-dial-container" class="miles-dial-container" style="display: none;">
-            <span class="dial-label">Spin to log miles</span>
+            <span class="dial-label">Tap or drag to set miles</span>
             <div id="miles-dial" class="miles-dial">
-              <div class="dial-track"></div>
-              <div id="dial-indicator" class="dial-indicator"></div>
+              <svg class="dial-svg" viewBox="0 0 120 120">
+                <circle class="dial-track-bg" cx="60" cy="60" r="52" />
+                <circle id="dial-progress" class="dial-progress" cx="60" cy="60" r="52" />
+              </svg>
               <div id="dial-value" class="dial-value">0.0</div>
             </div>
-            <div class="dial-hint">Drag around the circle</div>
+            <div class="dial-controls">
+              <button type="button" id="dial-minus" class="dial-btn">-</button>
+              <button type="button" id="dial-plus" class="dial-btn">+</button>
+            </div>
             <button type="button" id="dial-reset" class="dial-reset">Reset</button>
           </div>
           <div id="log-existing" class="log-existing" aria-hidden="true">

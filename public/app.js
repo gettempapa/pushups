@@ -28,17 +28,19 @@ const logTypePushups = document.getElementById('log-type-pushups');
 const logTypeMiles = document.getElementById('log-type-miles');
 const milesDialContainer = document.getElementById('miles-dial-container');
 const milesDial = document.getElementById('miles-dial');
-const dialIndicator = document.getElementById('dial-indicator');
+const dialProgress = document.getElementById('dial-progress');
 const dialValue = document.getElementById('dial-value');
 const dialReset = document.getElementById('dial-reset');
+const dialPlus = document.getElementById('dial-plus');
+const dialMinus = document.getElementById('dial-minus');
 
 let currentLogType = 'pushups';
 let milesPayloadCache = null;
 let distanceExamples = null;
 let dialMiles = 0;
-let dialAngle = 0;
-let dialPrevAngle = null;
 let dialDragging = false;
+const DIAL_MAX_MILES = 15;
+const DIAL_CIRCUMFERENCE = 326.73; // 2 * PI * 52
 
 const animation = {
   start: null,
@@ -1745,7 +1747,7 @@ if (logForm) {
       // Handle miles logging - use dial value
       const milesValue = dialMiles;
       if (!name || !date || milesValue <= 0) {
-        logStatus.textContent = 'Enter a name, date, and spin the dial to log miles.';
+        logStatus.textContent = 'Enter a name, date, and set miles using the dial.';
         return;
       }
 
@@ -1756,12 +1758,16 @@ if (logForm) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, date, miles: milesValue, mode: 'add' })
         });
-        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to log miles');
+        }
         closeLogModal();
         showSuccessToast(`${name} logged ${milesValue.toFixed(1)} miles! Keep moving!`);
         await loadData();
       } catch (error) {
-        logStatus.textContent = 'Failed to log miles.';
+        console.error('Miles log error:', error);
+        logStatus.textContent = error.message || 'Failed to log miles.';
       }
       return;
     }
@@ -2071,8 +2077,6 @@ const setLogType = (type) => {
     if (milesDialContainer) milesDialContainer.style.display = 'flex';
     // Reset dial
     dialMiles = 0;
-    dialAngle = 0;
-    dialPrevAngle = null;
     updateDialDisplay();
   } else {
     if (countLabel) countLabel.style.display = 'grid';
@@ -2089,24 +2093,35 @@ const setLogType = (type) => {
   }
 };
 
-// Dial interaction
+// Dial interaction - circular progress meter
 const updateDialDisplay = () => {
-  if (dialIndicator) {
-    dialIndicator.style.transform = `translateX(-50%) rotate(${dialAngle}deg)`;
+  if (dialProgress) {
+    const progress = Math.min(dialMiles / DIAL_MAX_MILES, 1);
+    const offset = DIAL_CIRCUMFERENCE * (1 - progress);
+    dialProgress.style.strokeDashoffset = offset;
   }
   if (dialValue) {
     dialValue.textContent = dialMiles.toFixed(1);
   }
 };
 
-const getAngleFromEvent = (e, rect) => {
+const setDialMiles = (value) => {
+  dialMiles = Math.max(0, Math.min(DIAL_MAX_MILES, value));
+  updateDialDisplay();
+};
+
+const getMilesFromEvent = (e, rect) => {
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   const dx = clientX - centerX;
   const dy = clientY - centerY;
-  return Math.atan2(dy, dx) * (180 / Math.PI) + 90; // +90 to start from top
+  // Calculate angle from top (0 = top, clockwise)
+  let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
+  if (angle < 0) angle += 360;
+  // Convert angle to miles (360 degrees = DIAL_MAX_MILES)
+  return (angle / 360) * DIAL_MAX_MILES;
 };
 
 const handleDialStart = (e) => {
@@ -2114,34 +2129,18 @@ const handleDialStart = (e) => {
   e.preventDefault();
   dialDragging = true;
   const rect = milesDial.getBoundingClientRect();
-  dialPrevAngle = getAngleFromEvent(e, rect);
+  setDialMiles(getMilesFromEvent(e, rect));
 };
 
 const handleDialMove = (e) => {
   if (!dialDragging || !milesDial) return;
   e.preventDefault();
   const rect = milesDial.getBoundingClientRect();
-  const currentAngle = getAngleFromEvent(e, rect);
-
-  if (dialPrevAngle !== null) {
-    let delta = currentAngle - dialPrevAngle;
-
-    // Handle wrap-around at 180/-180
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
-
-    dialAngle += delta;
-    // 1 full rotation = 1 mile (360 degrees = 1 mile)
-    dialMiles = Math.max(0, dialAngle / 360);
-    updateDialDisplay();
-  }
-
-  dialPrevAngle = currentAngle;
+  setDialMiles(getMilesFromEvent(e, rect));
 };
 
 const handleDialEnd = () => {
   dialDragging = false;
-  dialPrevAngle = null;
 };
 
 if (milesDial) {
@@ -2153,11 +2152,17 @@ if (milesDial) {
   document.addEventListener('touchend', handleDialEnd);
 }
 
+if (dialPlus) {
+  dialPlus.addEventListener('click', () => setDialMiles(dialMiles + 0.5));
+}
+
+if (dialMinus) {
+  dialMinus.addEventListener('click', () => setDialMiles(dialMiles - 0.5));
+}
+
 if (dialReset) {
   dialReset.addEventListener('click', () => {
     dialMiles = 0;
-    dialAngle = 0;
-    dialPrevAngle = null;
     updateDialDisplay();
   });
 }

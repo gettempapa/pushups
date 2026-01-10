@@ -1666,38 +1666,34 @@ canvas {
 
 .miles-dial {
   position: relative;
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: var(--bg-2);
-  border: 3px solid var(--panel-border);
-  cursor: grab;
+  width: 140px;
+  height: 140px;
+  cursor: pointer;
   touch-action: none;
   user-select: none;
 }
 
-.miles-dial:active {
-  cursor: grabbing;
+.dial-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
 }
 
-.dial-track {
-  position: absolute;
-  inset: 8px;
-  border-radius: 50%;
-  border: 2px dashed rgba(255, 255, 255, 0.1);
+.dial-track-bg {
+  fill: none;
+  stroke: var(--bg-3);
+  stroke-width: 10;
 }
 
-.dial-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 4px;
-  height: 50%;
-  background: var(--accent);
-  border-radius: 2px;
-  transform-origin: bottom center;
-  transform: translateX(-50%) rotate(0deg);
-  box-shadow: 0 0 10px var(--accent);
+.dial-progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 326.73;
+  stroke-dashoffset: 326.73;
+  transition: stroke-dashoffset 0.1s ease-out;
+  filter: drop-shadow(0 0 6px var(--accent));
 }
 
 .dial-value {
@@ -1711,10 +1707,34 @@ canvas {
   pointer-events: none;
 }
 
-.dial-hint {
-  font-size: 0.625rem;
-  color: var(--muted);
-  text-align: center;
+.dial-controls {
+  display: flex;
+  gap: 16px;
+}
+
+.dial-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-3);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dial-btn:hover {
+  background: var(--bg-2);
+  border-color: var(--accent);
+}
+
+.dial-btn:active {
+  transform: scale(0.95);
 }
 
 .dial-reset {
