@@ -1510,7 +1510,7 @@ h1 {
 /* Report button */
 .today-bar .report-container {
   position: absolute;
-  bottom: 8px;
+  top: 8px;
   right: 8px;
 }
 
