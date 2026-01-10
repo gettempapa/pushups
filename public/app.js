@@ -58,24 +58,43 @@ const setSuspectedUser = (name, isSuspected) => {
   localStorage.setItem('suspectedUsers', JSON.stringify(suspected));
 };
 
-// Stolen valor accusations tracking
-const getStolenValorUsers = () => {
+// Stolen valor accusations tracking (server-persisted)
+let stolenValorCache = [];
+
+const getStolenValorUsers = () => stolenValorCache;
+
+const fetchStolenValorUsers = async () => {
   try {
-    return JSON.parse(localStorage.getItem('stolenValorUsers') || '[]');
-  } catch {
-    return [];
+    const res = await fetch('/api/stolen-valor');
+    if (res.ok) {
+      const data = await res.json();
+      stolenValorCache = data.accused || [];
+    }
+  } catch (err) {
+    console.error('Failed to fetch stolen valor:', err);
   }
+  return stolenValorCache;
 };
 
-const setStolenValorUser = (name, isAccused) => {
-  const accused = getStolenValorUsers();
-  if (isAccused && !accused.includes(name)) {
-    accused.push(name);
+const setStolenValorUser = async (name, isAccused) => {
+  // Update cache immediately for responsive UI
+  if (isAccused && !stolenValorCache.includes(name)) {
+    stolenValorCache.push(name);
   } else if (!isAccused) {
-    const idx = accused.indexOf(name);
-    if (idx !== -1) accused.splice(idx, 1);
+    const idx = stolenValorCache.indexOf(name);
+    if (idx !== -1) stolenValorCache.splice(idx, 1);
   }
-  localStorage.setItem('stolenValorUsers', JSON.stringify(accused));
+
+  // Persist to server
+  try {
+    await fetch('/api/stolen-valor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, accused: isAccused })
+    });
+  } catch (err) {
+    console.error('Failed to save stolen valor:', err);
+  }
 };
 
 let dialDragging = false;
@@ -1008,11 +1027,11 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     reportBtn.className = 'report-btn';
     reportBtn.textContent = '⚑ REPORT';
 
-    reportBtn.addEventListener('click', (e) => {
+    reportBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (isStolenValor) {
         // Already accused - remove accusation
-        setStolenValorUser(item.name, false);
+        await setStolenValorUser(item.name, false);
         renderTodayBars(metricSeries, metric, selectedDay, dates);
       } else {
         // Show custom modal
@@ -1035,9 +1054,9 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
         overlay.querySelector('.cancel-btn').addEventListener('click', () => {
           overlay.remove();
         });
-        overlay.querySelector('.confirm-btn').addEventListener('click', () => {
+        overlay.querySelector('.confirm-btn').addEventListener('click', async () => {
           overlay.remove();
-          setStolenValorUser(item.name, true);
+          await setStolenValorUser(item.name, true);
           renderTodayBars(metricSeries, metric, selectedDay, dates);
         });
         overlay.addEventListener('click', (evt) => {
@@ -2384,8 +2403,8 @@ const loadRandomMascot = async () => {
 };
 
 loadPersistedSummary();
-// Load exercise GIFs first, then data
-loadExerciseGifs().then(() => {
+// Load exercise GIFs and stolen valor data, then main data
+Promise.all([loadExerciseGifs(), fetchStolenValorUsers()]).then(() => {
   loadData().catch(() => {
     statusEl.textContent = 'Sync failed';
   });
