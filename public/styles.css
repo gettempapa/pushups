@@ -1113,6 +1113,27 @@ h1 {
   opacity: 0.8;
 }
 
+.roaring-guy-small {
+  width: 24px;
+  height: 24px;
+  margin-left: 8px;
+  animation: violentShake 0.05s infinite;
+}
+
+.roaring-guy-large {
+  width: 120px;
+  height: 120px;
+  animation: violentShake 0.03s infinite;
+}
+
+@keyframes violentShake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-3px, 2px) rotate(-2deg); }
+  50% { transform: translate(3px, -2px) rotate(2deg); }
+  75% { transform: translate(-2px, -3px) rotate(-1deg); }
+  100% { transform: translate(2px, 3px) rotate(1deg); }
+}
+
 .today-bar .trophy {
   font-size: 0.9rem;
 }
@@ -1853,6 +1874,18 @@ canvas {
   opacity: 1;
   pointer-events: auto;
   transform: translate(-50%, -50%) scale(1);
+}
+
+.success-toast {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.success-toast .roaring-guy-large {
+  display: block;
+  margin: 0 auto;
 }
 
 .success-toast p {

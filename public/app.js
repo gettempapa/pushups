@@ -53,11 +53,15 @@ const getMotivationalMessage = (name, count) => {
   }
 };
 
-const showSuccessToast = (message) => {
+const showSuccessToast = (message, showRoaring = false) => {
   const toast = document.getElementById('success-toast');
   const toastMessage = document.getElementById('success-toast-message');
+  const toastRoaring = document.getElementById('success-toast-roaring');
   if (!toast || !toastMessage) return;
   toastMessage.textContent = message;
+  if (toastRoaring) {
+    toastRoaring.style.display = showRoaring ? 'block' : 'none';
+  }
   toast.classList.add('visible');
   setTimeout(() => {
     toast.classList.remove('visible');
@@ -846,6 +850,13 @@ const renderTodayBars = (metricSeries, metric, selectedDay, dates) => {
     const name = document.createElement('div');
     name.className = 'name';
     name.textContent = item.name;
+    if (item.value > goal) {
+      const roaring = document.createElement('img');
+      roaring.src = 'roaring_guy.png';
+      roaring.className = 'roaring-guy-small';
+      roaring.alt = '';
+      name.appendChild(roaring);
+    }
     if (item.isDeceased) {
       const deceased = document.createElement('span');
       deceased.className = 'deceased-label';
@@ -1724,7 +1735,9 @@ if (logForm) {
         if (!res.ok) throw new Error('Failed');
         closeLogModal();
         const message = getMotivationalMessage(name, count);
-        showSuccessToast(message);
+        const newTotal = mode === 'add' ? existing + count : count;
+        const showRoaring = count >= 30 || newTotal > goal;
+        showSuccessToast(message, showRoaring);
       }
       await loadData();
       // Generate a new daily summary after logging pushups
