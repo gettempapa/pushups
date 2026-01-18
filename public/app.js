@@ -2416,7 +2416,7 @@ if (logTypeFood) {
 // Food logging functions
 const loadFoods = async () => {
   try {
-    const res = await fetch('/api/foods');
+    const res = await fetch('/api/food');
     if (!res.ok) throw new Error('Failed to load foods');
     const data = await res.json();
     foodsCache = data.foods || [];
@@ -2497,7 +2497,7 @@ const logFood = async (btn) => {
   btn.style.opacity = '0.7';
 
   try {
-    const res = await fetch('/api/log-food', {
+    const res = await fetch('/api/food', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2541,7 +2541,7 @@ const loadTodayFoodLogs = async () => {
 
   try {
     const today = getLocalIsoDate();
-    const res = await fetch(`/api/food-logs?name=${encodeURIComponent(userName)}&date=${today}`);
+    const res = await fetch(`/api/food?name=${encodeURIComponent(userName)}&date=${today}`);
     if (!res.ok) throw new Error('Failed to load food logs');
     const data = await res.json();
     todayFoodLogs = data.logs || [];
