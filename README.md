@@ -31,3 +31,9 @@ Date | Alex | Priya | Sam
 ```
 
 Each following row should include a date in the first column and daily totals for each person.
+
+## Branch workflow
+
+- One branch per agent/task; never share a branch.
+- Prefix branches with `agent/<name>/` or `feature/<topic>/`.
+- Post a quick note on which files you plan to touch before big edits.

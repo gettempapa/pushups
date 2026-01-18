@@ -45,7 +45,29 @@
             <div class="log-type-toggle">
               <button type="button" id="log-type-pushups" class="log-type-btn active">Pushups</button>
               <button type="button" id="log-type-miles" class="log-type-btn">Miles</button>
+              <button type="button" id="log-type-food" class="log-type-btn">Food</button>
             </div>
+
+            <!-- Food Logging Section -->
+            <div id="food-log-section" class="food-log-section" style="display: none;">
+              <label>
+                <span>Name</span>
+                <select id="food-log-name" required></select>
+              </label>
+              <div class="food-search-container">
+                <input type="text" id="food-search" class="food-search" placeholder="Search foods..." autocomplete="off" />
+                <span class="food-search-icon">🔍</span>
+              </div>
+              <div id="food-results" class="food-results"></div>
+              <div id="food-log-today" class="food-log-today">
+                <div class="food-log-today-header">
+                  <span>Today's Log</span>
+                  <span id="food-points-total" class="food-points-total">0 pts</span>
+                </div>
+                <div id="food-log-list" class="food-log-list"></div>
+              </div>
+            </div>
+
             <form id="log-form" class="log-form">
               <label>
                 <span>Name</span>

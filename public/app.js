@@ -24,6 +24,13 @@ const logTitle = document.getElementById('log-title');
 const logCountText = document.getElementById('log-count-text');
 const logTypePushups = document.getElementById('log-type-pushups');
 const logTypeMiles = document.getElementById('log-type-miles');
+const logTypeFood = document.getElementById('log-type-food');
+const foodLogSection = document.getElementById('food-log-section');
+const foodLogName = document.getElementById('food-log-name');
+const foodSearch = document.getElementById('food-search');
+const foodResults = document.getElementById('food-results');
+const foodLogList = document.getElementById('food-log-list');
+const foodPointsTotal = document.getElementById('food-points-total');
 const milesDialContainer = document.getElementById('miles-dial-container');
 const milesDial = document.getElementById('miles-dial');
 const dialProgress = document.getElementById('dial-progress');
@@ -37,6 +44,8 @@ let milesPayloadCache = null;
 let distanceExamples = null;
 let exerciseGifs = [];
 let dialMiles = 0;
+let foodsCache = [];
+let todayFoodLogs = [];
 
 // Suspected of inflated numbers tracking
 const getSuspectedUsers = () => {
@@ -2226,18 +2235,44 @@ const setLogType = (type) => {
   currentLogType = type;
   if (logTypePushups) logTypePushups.classList.toggle('active', type === 'pushups');
   if (logTypeMiles) logTypeMiles.classList.toggle('active', type === 'miles');
-  if (logTitle) logTitle.textContent = type === 'pushups' ? 'LOG PUSHUP(S)' : 'LOG MILES';
+  if (logTypeFood) logTypeFood.classList.toggle('active', type === 'food');
+
+  // Update title based on type
+  if (logTitle) {
+    if (type === 'pushups') logTitle.textContent = 'LOG PUSHUP(S)';
+    else if (type === 'miles') logTitle.textContent = 'LOG MILES';
+    else if (type === 'food') logTitle.textContent = 'LOG FOOD';
+  }
   if (logCountText) logCountText.textContent = type === 'pushups' ? 'Pushups' : 'Miles';
 
-  // Show/hide dial vs number input
+  // Show/hide sections based on type
   const countLabel = document.getElementById('log-count-label');
-  if (type === 'miles') {
+  const logForm = document.getElementById('log-form');
+
+  if (type === 'food') {
+    // Hide workout form, show food section
+    if (logForm) logForm.style.display = 'none';
+    if (foodLogSection) foodLogSection.style.display = 'flex';
+    if (milesDialContainer) milesDialContainer.style.display = 'none';
+    // Load foods if not already loaded
+    if (foodsCache.length === 0) {
+      loadFoods();
+    }
+    // Populate food log name dropdown
+    populateFoodLogNameDropdown();
+    // Load today's food logs
+    loadTodayFoodLogs();
+  } else if (type === 'miles') {
+    if (logForm) logForm.style.display = 'grid';
+    if (foodLogSection) foodLogSection.style.display = 'none';
     if (countLabel) countLabel.style.display = 'none';
     if (milesDialContainer) milesDialContainer.style.display = 'flex';
     // Reset dial
     dialMiles = 0;
     updateDialDisplay();
   } else {
+    if (logForm) logForm.style.display = 'grid';
+    if (foodLogSection) foodLogSection.style.display = 'none';
     if (countLabel) countLabel.style.display = 'grid';
     if (milesDialContainer) milesDialContainer.style.display = 'none';
     if (logCount) {
@@ -2367,6 +2402,203 @@ if (logTypeMiles) {
   });
 }
 
+if (logTypeFood) {
+  logTypeFood.addEventListener('click', (e) => {
+    e.preventDefault();
+    setLogType('food');
+  });
+  logTypeFood.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    setLogType('food');
+  });
+}
+
+// Food logging functions
+const loadFoods = async () => {
+  try {
+    const res = await fetch('/api/foods');
+    if (!res.ok) throw new Error('Failed to load foods');
+    const data = await res.json();
+    foodsCache = data.foods || [];
+    renderFoodResults(''); // Show some default results
+  } catch (err) {
+    console.error('Error loading foods:', err);
+    if (foodResults) {
+      foodResults.innerHTML = '<div class="food-log-empty">Failed to load foods</div>';
+    }
+  }
+};
+
+const populateFoodLogNameDropdown = () => {
+  if (!foodLogName) return;
+  // Copy options from the main log-name dropdown
+  const mainLogName = document.getElementById('log-name');
+  if (mainLogName) {
+    foodLogName.innerHTML = mainLogName.innerHTML;
+  }
+};
+
+const renderFoodResults = (query) => {
+  if (!foodResults) return;
+
+  const q = query.toLowerCase().trim();
+  let filtered = foodsCache;
+
+  if (q) {
+    filtered = foodsCache.filter(food =>
+      food.name.toLowerCase().includes(q) ||
+      (food.category && food.category.toLowerCase().includes(q)) ||
+      (food.subcategory && food.subcategory.toLowerCase().includes(q))
+    );
+  }
+
+  // Limit results for performance
+  const maxResults = q ? 50 : 20;
+  filtered = filtered.slice(0, maxResults);
+
+  if (filtered.length === 0) {
+    foodResults.innerHTML = '<div class="food-log-empty">No foods found</div>';
+    return;
+  }
+
+  foodResults.innerHTML = filtered.map(food => {
+    const pointsClass = food.points >= 0 ? 'positive' : 'negative';
+    const pointsDisplay = food.points >= 0 ? `+${food.points}` : food.points;
+    return `
+      <button type="button" class="food-btn" data-food-id="${food.id}" data-food-name="${food.name}" data-food-points="${food.points}">
+        <div class="food-btn-info">
+          <span class="food-btn-name">${food.name}</span>
+          <span class="food-btn-category">${food.category || ''}</span>
+        </div>
+        <span class="food-btn-points ${pointsClass}">${pointsDisplay}</span>
+      </button>
+    `;
+  }).join('');
+
+  // Add click handlers to food buttons
+  foodResults.querySelectorAll('.food-btn').forEach(btn => {
+    btn.addEventListener('click', () => logFood(btn));
+  });
+};
+
+const logFood = async (btn) => {
+  const foodId = btn.dataset.foodId;
+  const foodName = btn.dataset.foodName;
+  const foodPoints = parseInt(btn.dataset.foodPoints, 10);
+  const userName = foodLogName ? foodLogName.value : null;
+
+  if (!userName) {
+    showSuccessToast('Please select your name first');
+    return;
+  }
+
+  // Visual feedback
+  btn.style.transform = 'scale(0.95)';
+  btn.style.opacity = '0.7';
+
+  try {
+    const res = await fetch('/api/log-food', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: userName,
+        food_id: foodId,
+        food_name: foodName,
+        points: foodPoints,
+        date: getLocalIsoDate()
+      })
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to log food');
+    }
+
+    // Update local state
+    todayFoodLogs.push({ food_name: foodName, points: foodPoints });
+    renderTodayFoodLogs();
+
+    // Show feedback
+    const pointsText = foodPoints >= 0 ? `+${foodPoints}` : foodPoints;
+    showSuccessToast(`${foodName} logged! (${pointsText} pts)`);
+
+  } catch (err) {
+    console.error('Error logging food:', err);
+    showSuccessToast('Failed to log food');
+  } finally {
+    btn.style.transform = '';
+    btn.style.opacity = '';
+  }
+};
+
+const loadTodayFoodLogs = async () => {
+  const userName = foodLogName ? foodLogName.value : null;
+  if (!userName) {
+    todayFoodLogs = [];
+    renderTodayFoodLogs();
+    return;
+  }
+
+  try {
+    const today = getLocalIsoDate();
+    const res = await fetch(`/api/food-logs?name=${encodeURIComponent(userName)}&date=${today}`);
+    if (!res.ok) throw new Error('Failed to load food logs');
+    const data = await res.json();
+    todayFoodLogs = data.logs || [];
+    renderTodayFoodLogs();
+  } catch (err) {
+    console.error('Error loading food logs:', err);
+    todayFoodLogs = [];
+    renderTodayFoodLogs();
+  }
+};
+
+const renderTodayFoodLogs = () => {
+  if (!foodLogList || !foodPointsTotal) return;
+
+  const total = todayFoodLogs.reduce((sum, log) => sum + (log.points || 0), 0);
+
+  // Update total display
+  const totalClass = total >= 0 ? 'positive' : 'negative';
+  const totalText = total >= 0 ? `+${total}` : total;
+  foodPointsTotal.textContent = `${totalText} pts`;
+  foodPointsTotal.className = `food-points-total ${totalClass}`;
+
+  if (todayFoodLogs.length === 0) {
+    foodLogList.innerHTML = '<div class="food-log-empty">No foods logged today</div>';
+    return;
+  }
+
+  foodLogList.innerHTML = todayFoodLogs.map(log => {
+    const pointsClass = log.points >= 0 ? 'positive' : 'negative';
+    const pointsDisplay = log.points >= 0 ? `+${log.points}` : log.points;
+    return `
+      <div class="food-log-item">
+        <span class="food-log-item-name">${log.food_name}</span>
+        <span class="food-log-item-points ${pointsClass}">${pointsDisplay}</span>
+      </div>
+    `;
+  }).join('');
+};
+
+// Food search input handler with debounce
+let foodSearchTimeout = null;
+if (foodSearch) {
+  foodSearch.addEventListener('input', (e) => {
+    const query = e.target.value;
+    clearTimeout(foodSearchTimeout);
+    foodSearchTimeout = setTimeout(() => {
+      renderFoodResults(query);
+    }, 150);
+  });
+}
+
+// Food log name change handler
+if (foodLogName) {
+  foodLogName.addEventListener('change', () => {
+    loadTodayFoodLogs();
+  });
+}
 
 // Load exercise GIFs for use next to names
 const loadExerciseGifs = async () => {
