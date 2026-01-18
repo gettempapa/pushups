@@ -11,6 +11,8 @@ const deadlineClock = document.getElementById('deadline-clock');
 const deadlineClockHeader = document.getElementById('deadline-clock-header');
 const logForm = document.getElementById('log-form');
 const logName = document.getElementById('log-name');
+const newUserField = document.getElementById('new-user-field');
+const newUserName = document.getElementById('new-user-name');
 const logDate = document.getElementById('log-date');
 const logCount = document.getElementById('log-count');
 const logStatus = document.getElementById('log-status');
@@ -1829,29 +1831,67 @@ const populateLogNames = series => {
     option.textContent = entry.name;
     logName.appendChild(option);
   });
+  const newOption = document.createElement('option');
+  newOption.value = '__new__';
+  newOption.textContent = 'New user...';
+  logName.appendChild(newOption);
   const saved = document.cookie
     .split(';')
     .map(item => item.trim())
     .find(item => item.startsWith('pushup_name='));
   if (saved) {
     const value = decodeURIComponent(saved.split('=')[1] || '');
-    if (value) logName.value = value;
+    if (value) {
+      const hasOption = [...logName.options].some(option => option.value === value);
+      if (hasOption) {
+        logName.value = value;
+      } else {
+        logName.value = '__new__';
+        if (newUserName) newUserName.value = value;
+      }
+    }
   }
+  updateNewUserField();
+};
+
+const isNewUserSelected = () => logName?.value === '__new__';
+
+const getActiveLogName = () => {
+  if (!logName) return '';
+  if (isNewUserSelected()) return (newUserName?.value || '').trim();
+  return logName.value.trim();
+};
+
+const getLogSeries = () => getSeriesForMetric('pushups');
+
+const getLogUnitLabel = () => 'pushups';
+
+const updateNewUserField = () => {
+  if (!newUserField || !newUserName) return;
+  const show = isNewUserSelected();
+  newUserField.style.display = show ? 'grid' : 'none';
+  if (!show) newUserName.value = '';
 };
 
 const refreshLogExisting = () => {
   if (!logName || !logDate || !logExisting || !logExistingText) return;
-  const name = logName.value.trim();
+  const name = getActiveLogName();
   const date = logDate.value;
   if (!name || !date) {
     logExisting.setAttribute('aria-hidden', 'true');
     logExisting.classList.remove('visible');
     return;
   }
-  const series = getSeriesForMetric('pushups');
+  if (currentLogType === 'miles') {
+    logExisting.setAttribute('aria-hidden', 'true');
+    logExisting.classList.remove('visible');
+    return;
+  }
+  const series = getLogSeries();
   const existing = series.find(entry => entry.name === name)?.points.find(point => point.date === date)?.value ?? 0;
   if (existing > 0) {
-    logExistingText.textContent = `${name} already has ${existing} pushups on ${date}. Choose how to log this entry.`;
+    const unitLabel = getLogUnitLabel();
+    logExistingText.textContent = `${name} already has ${existing} ${unitLabel} on ${date}. Choose how to log this entry.`;
     logExisting.setAttribute('aria-hidden', 'false');
     logExisting.classList.add('visible');
   } else {
@@ -1872,6 +1912,7 @@ const initLogForm = () => {
   if (payloadCache && logName && logName.options.length === 0) {
     populateLogNames(getSeriesForMetric('pushups'));
   }
+  updateNewUserField();
   refreshLogExisting();
 };
 
@@ -1883,13 +1924,27 @@ const resetLogForm = () => {
     logExisting.setAttribute('aria-hidden', 'true');
     logExisting.classList.remove('visible');
   }
+  updateNewUserField();
+  refreshLogExisting();
 };
-if (logName) logName.addEventListener('change', refreshLogExisting);
-if (logDate) logDate.addEventListener('change', refreshLogExisting);
 if (logName) {
   logName.addEventListener('change', () => {
-    const value = encodeURIComponent(logName.value || '');
-    document.cookie = `pushup_name=${value}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    updateNewUserField();
+    refreshLogExisting();
+    if (!isNewUserSelected()) {
+      const value = encodeURIComponent(logName.value || '');
+      document.cookie = `pushup_name=${value}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    }
+  });
+}
+if (logDate) logDate.addEventListener('change', refreshLogExisting);
+if (newUserName) {
+  newUserName.addEventListener('input', () => {
+    refreshLogExisting();
+    const value = encodeURIComponent(newUserName.value || '');
+    if (value) {
+      document.cookie = `pushup_name=${value}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    }
   });
 }
 
@@ -1898,7 +1953,7 @@ if (logForm) {
     event.preventDefault();
     if (!logName || !logDate || !logCount || !logStatus) return;
 
-    const name = logName.value.trim();
+    const name = getActiveLogName();
     const date = logDate.value;
     const count = Number(logCount.value);
 
@@ -1906,7 +1961,9 @@ if (logForm) {
       // Handle miles logging - use dial value
       const milesValue = dialMiles;
       if (!name || !date || milesValue <= 0) {
-        logStatus.textContent = 'Enter a name, date, and set miles using the dial.';
+        logStatus.textContent = isNewUserSelected()
+          ? 'Enter a new user name, date, and set miles using the dial.'
+          : 'Enter a name, date, and set miles using the dial.';
         return;
       }
 
@@ -1934,7 +1991,9 @@ if (logForm) {
 
     // Handle pushups logging
     if (!name || !date || !Number.isFinite(count)) {
-      logStatus.textContent = 'Enter a name, date, and pushup count.';
+      logStatus.textContent = isNewUserSelected()
+        ? 'Enter a new user name, date, and pushup count.'
+        : 'Enter a name, date, and pushup count.';
       return;
     }
 
